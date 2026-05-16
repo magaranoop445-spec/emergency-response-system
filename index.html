@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Emergency Service Request System | Morgan International College</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="app-container">
+        <header class="header">
+            <div class="logo-section">
+                <div class="university-badge">
+                    <span class="tu-logo">🏛️</span>
+                    <div>
+                        <h2>Tribhuvan University</h2>
+                        <p>Faculty of Humanities & Social Sciences</p>
+                    </div>
+                </div>
+                <div class="college-badge">
+                    <div>
+                        <h3>Morgan International College</h3>
+                        <p>Bachelor of Computer Application (BCA)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="project-title">
+                <h1>🚨 Emergency Service Request System</h1>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <div class="dashboard">
+            <!-- Role Selection Tabs -->
+            <div class="role-tabs">
+                <button class="role-tab active" data-role="requester">📱 Requester (Citizen)</button>
+                <button class="role-tab" data-role="provider">🚒 Service Provider</button>
+                <button class="role-tab" data-role="admin">👨‍💼 Administrator</button>
+            </div>
+
+            <!-- Requester Dashboard -->
+            <div id="requesterDashboard" class="dashboard-panel active">
+                <div class="grid-2col">
+                    <!-- Emergency Report Form -->
+                    <div class="card">
+                        <h3>📢 Report Emergency</h3>
+                        <form id="emergencyForm">
+                            <div class="form-group">
+                                <label>Emergency Type *</label>
+                                <select id="incidentType" required>
+                                    <option value="Medical">🚑 Medical Emergency (Ambulance)</option>
+                                    <option value="Fire">🔥 Fire Hazard</option>
+                                    <option value="Police">👮 Police / Security Incident</option>
+                                    <option value="Accident">🚗 Traffic Accident</option>
+                                    <option value="NaturalDisaster">🌊 Natural Disaster</option>
+                                </select>
+                            </div>
+
+                            <!-- Three Universal Questions (55% weight) -->
+                            <div class="severity-section">
+                                <label>⚠️ Severity Assessment (55% Priority Weight)</label>
+                                <div class="question-group">
+                                    <p>Q1: Is there immediate threat to human life?</p>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="q1" value="100"> Yes - Life threatening</label>
+                                        <label><input type="radio" name="q1" value="50"> Possibly</label>
+                                        <label><input type="radio" name="q1" value="0"> No</label>
+                                    </div>
+                                </div>
+                                <div class="question-group">
+                                    <p>Q2: How many people are affected?</p>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="q2" value="100"> 5+ people</label>
+                                        <label><input type="radio" name="q2" value="60"> 2-4 people</label>
+                                        <label><input type="radio" name="q2" value="20"> 1 person</label>
+                                        <label><input type="radio" name="q2" value="0"> None</label>
+                                    </div>
+                                </div>
+                                <div class="question-group">
+                                    <p>Q3: Is medical attention required immediately?</p>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="q3" value="100"> Critical - Immediate</label>
+                                        <label><input type="radio" name="q3" value="50"> Within 30 minutes</label>
+                                        <label><input type="radio" name="q3" value="0"> Not urgent</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Nepal-Specific Location Fields -->
+                            <div class="form-group">
+                                <label>📍 Location (Nepal Address) *</label>
+                                <div class="location-grid">
+                                    <select id="province" required>
+                                        <option value="">Select Province</option>
+                                        <option>Province No. 1</option>
+                                        <option>Madhesh Province</option>
+                                        <option>Bagmati Province</option>
+                                        <option>Gandaki Province</option>
+                                        <option>Lumbini Province</option>
+                                        <option>Karnali Province</option>
+                                        <option>Sudurpashchim Province</option>
+                                    </select>
+                                    <input type="text" id="district" placeholder="District" required>
+                                    <input type="text" id="municipality" placeholder="Municipality/Rural Municipality" required>
+                                    <input type="number" id="ward" placeholder="Ward Number (1-32)" min="1" max="32" required>
+                                    <input type="text" id="tole" placeholder="Tole/Landmark" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>📝 Incident Details *</label>
+                                <textarea id="details" placeholder="Describe what happened, any injuries, threats..." required minlength="10"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>🎥 Video Evidence (Optional, Max 50MB)</label>
+                                <input type="file" id="videoUpload" accept="video/mp4,video/webm">
+                                <small>MP4 format recommended. Only admin and assigned provider can view.</small>
+                            </div>
+
+                            <button type="submit" class="btn-emergency">🚨 SUBMIT EMERGENCY REPORT</button>
+                        </form>
+                    </div>
+
+                    <!-- Map and Status -->
+                    <div class="card">
+                        <h3>🗺️ Incident Map</h3>
+                        <div id="map"></div>
+                        <div class="map-controls">
+                            <button onclick="centerUserLocation()" class="btn-secondary">📍 My Location</button>
+                            <button onclick="showHotspots()" class="btn-secondary">🔥 View Hotspots</button>
+                        </div>
+                        <div id="myIncidents" class="my-incidents">
+                            <h4>My Reports</h4>
+                            <div id="userIncidentsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Dashboard -->
+            <div id="providerDashboard" class="dashboard-panel">
+                <div class="grid-2col">
+                    <div class="card">
+                        <h3>📋 Priority Queue (Weighted Ranking)</h3>
+                        <div id="priorityQueueList" class="incident-list">
+                            <div class="empty-msg">No pending incidents</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📊 My Assigned Incidents</h3>
+                        <div id="assignedIncidentsList" class="incident-list"></div>
+                        <div class="stats-card">
+                            <h4>Response Statistics</h4>
+                            <p>✅ Completed: <span id="completedCount">0</span></p>
+                            <p>⭐ Average Rating: <span id="avgRating">0</span>/5</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="dashboard-panel">
+                <div class="grid-2col">
+                    <div class="card">
+                        <h3>🎯 Incident Clusters (DBSCAN Analysis)</h3>
+                        <div id="clustersList" class="clusters-container"></div>
+                        <div class="hotspot-actions">
+                            <button onclick="refreshClusters()" class="btn-secondary">🔄 Refresh Analysis</button>
+                            <button onclick="suggestResources()" class="btn-secondary">📊 Suggest Resource Allocation</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>🔍 Video Evidence Review</h3>
+                        <div id="videoReviewList" class="video-list"></div>
+                        <div class="boost-control">
+                            <h4>Priority Boost (5% Admin Override)</h4>
+                            <select id="boostIncidentSelect">
+                                <option value="">Select incident to boost</option>
+                            </select>
+                            <button onclick="applyPriorityBoost()" class="btn-warning">⭐ Apply Priority Boost</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card full-width">
+                    <h3>📈 System Analytics</h3>
+                    <div class="analytics-grid">
+                        <div class="stat-card"><span>Total Incidents</span><strong id="totalIncidents">0</strong></div>
+                        <div class="stat-card"><span>Active Incidents</span><strong id="activeIncidents">0</strong></div>
+                        <div class="stat-card"><span>Avg Response Time</span><strong id="avgResponseTime">0 min</strong></div>
+                        <div class="stat-card"><span>Hotspots Detected</span><strong id="hotspotCount">0</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2024 Emergency Service Request System | Morgan International College | Tribhuvan University</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
