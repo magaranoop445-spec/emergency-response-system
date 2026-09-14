@@ -765,29 +765,12 @@ app.get('/admin-dashboard.html', (req, res) => {
 
 // ==================== START SERVER ====================
 
-// Only listen on a port when running locally.
-// Vercel's serverless environment crashes if app.listen() is called,
-// so we skip it there and just export the app.
 if (!process.env.VERCEL) {
     app.listen(PORT, async () => {
-        console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║     🚨 EMERGENCY SERVICE REPORT SYSTEM 🚨                     ║
-║     Server running on http://localhost:${PORT}                  ║
-╚══════════════════════════════════════════════════════════════╝
-        `);
-        
-        console.log('📡 API Endpoints:');
-        console.log('   GET  /api/search?q=query     - Inverted Index Search');
-        console.log('   GET  /api/ranked-incidents   - Weighted Ranking');
-        console.log('   GET  /api/priority-queue     - Priority Queue');
-        console.log('   GET  /api/clusters           - DBSCAN Clustering');
-        console.log('   GET  /api/health             - Health Check');
-        console.log('   POST /api/incidents          - Create Incident (with video support)');
-        
+        console.log(`🚨 Server running on http://localhost:${PORT}`);
         try {
             await updateCache();
-            console.log('\n✅ System ready!');
+            console.log('✅ System ready!');
         } catch (err) {
             console.error('Startup cache error:', err);
         }
@@ -795,7 +778,6 @@ if (!process.env.VERCEL) {
 }
 
 // Prime the cache once when the module loads (also runs on Vercel).
-// Wrapped in .catch so a failure doesn't crash the serverless function.
 updateCache().catch(err => console.error('Background cache init failed:', err));
 
 // For Vercel serverless deployment
