@@ -826,6 +826,10 @@
                 }
             } catch (error) {
                 console.error('API error, using fallback:', error);
+
+                // 🔧 Compute human harm locally so the row is stored with correct fields
+                const humanHarm = (q1 + q2 + q3) / 3;
+
                 const { error: insertError } = await supabase
                     .from('emergency_requests')
                     .insert({
@@ -834,6 +838,9 @@
                         q1_threat_to_life: q1,
                         q2_people_affected: q2,
                         q3_urgency: q3,
+                        human_harm_score: humanHarm,
+                        time_decay_score: 100,
+                        proximity_bonus: 50,
                         description: incidentData.description,
                         province: incidentData.province,
                         district: incidentData.district,
@@ -868,7 +875,7 @@
         });
         
         // ============================================================
-        // FIXED deleteIncident - now verifies deletion actually happened
+        // FIXED deleteIncident - verifies deletion actually happened
         // ============================================================
         window.deleteIncident = async (id) => {
             if (!confirm('Are you sure you want to delete your incident?')) return;
@@ -876,7 +883,6 @@
             console.log('🗑️ Attempting to delete request_id:', id, '| typeof:', typeof id);
 
             try {
-                // Try to delete by request_id, and request the deleted rows back
                 const { data, error } = await supabase
                     .from('emergency_requests')
                     .delete()
@@ -890,7 +896,6 @@
                 }
 
                 if (!data || data.length === 0) {
-                    // Nothing was deleted — most likely RLS blocked it, or ID didn't match
                     console.warn('⚠️ No rows deleted for id:', id);
                     alert(
                         '⚠️ Nothing was actually deleted.\n\n' +
