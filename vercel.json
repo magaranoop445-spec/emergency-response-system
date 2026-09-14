@@ -1,19 +1,48 @@
 {
   "version": 2,
   "installCommand": "npm install",
-  "functions": {
-    "server.js": {
-      "memory": 1024,
-      "maxDuration": 10
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.css",
+      "use": "@vercel/static"
     }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/requester-dashboard.html", "destination": "/requester-dashboard.html" },
-    { "source": "/provider-dashboard.html", "destination": "/provider-dashboard.html" },
-    { "source": "/admin-dashboard.html", "destination": "/admin-dashboard.html" },
-    { "source": "/index.html", "destination": "/index.html" },
-    { "source": "/landing.css", "destination": "/landing.css" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/requester-dashboard.html",
+      "dest": "/requester-dashboard.html"
+    },
+    {
+      "src": "/provider-dashboard.html",
+      "dest": "/provider-dashboard.html"
+    },
+    {
+      "src": "/admin-dashboard.html",
+      "dest": "/admin-dashboard.html"
+    },
+    {
+      "src": "/index.html",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/landing.css",
+      "dest": "/landing.css"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
