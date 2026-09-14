@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | ESRS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
+        
+        .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.8rem; }
+        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #1e3a5f, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .user-name { font-weight: 700; }
+        .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
+        .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
+        
+        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        .full-width { grid-column: span 2; }
+        
+        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
+        
+        .provider-list, .user-list, .incident-list { max-height: 400px; overflow-y: auto; }
+        .provider-card, .user-card, .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid #dc2626; }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        
+        .btn-verify { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
+        .btn-remove { background: #dc2626; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-left: 0.5rem; }
+        .btn-boost { background: #f59e0b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+        .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; text-align: center; }
+        .stat-number { font-size: 1.8rem; font-weight: 800; color: #dc2626; }
+        .stat-label { font-size: 0.7rem; color: #64748b; }
+        
+        .boost-select { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
+        textarea { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
+        
+        @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo"><span class="logo-icon">👨‍💼</span><span class="logo-text">Admin Dashboard</span></div>
+        <div class="user-info">
+            <div><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">Administrator</div></div>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-number" id="totalIncidents">0</div><div class="stat-label">Total Incidents</div></div>
+            <div class="stat-card"><div class="stat-number" id="activeIncidents">0</div><div class="stat-label">Active</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">Total Users</div></div>
+            <div class="stat-card"><div class="stat-number" id="verifiedProviders">0</div><div class="stat-label">Verified Providers</div></div>
+        </div>
+
+        <div class="admin-grid">
+            <div class="card">
+                <h3>✅ Verify Service Providers</h3>
+                <div id="pendingProvidersList" class="provider-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+            </div>
+
+            <div class="card">
+                <h3>👥 Manage Users</h3>
+                <div id="usersList" class="user-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+            </div>
+
+            <div class="card">
+                <h3>🎥 Video Evidence Review</h3>
+                <div id="videoReviewList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">No videos pending</div></div>
+            </div>
+
+            <div class="card">
+                <h3>⭐ Priority Boost (5% Admin Override)</h3>
+                <select id="boostIncidentSelect" class="boost-select"><option value="">Select incident to boost</option></select>
+                <textarea id="boostReason" rows="2" placeholder="Reason for priority boost..."></textarea>
+                <button onclick="applyPriorityBoost()" class="btn-boost">Apply Priority Boost</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            const { data: userData } = await supabase.from('users').select('*').eq('user_id', session.user.id).single();
+            currentUser = userData;
+            if (currentUser.role !== 'admin') {
+                if (currentUser.role === 'provider') window.location.href = 'provider-dashboard.html';
+                else window.location.href = 'requester-dashboard.html';
+            }
+            document.getElementById('userName').textContent = currentUser.full_name;
+            document.getElementById('userRole').textContent = 'Administrator';
+            await loadPendingProviders();
+            await loadUsers();
+            await loadVideoReviews();
+            await loadBoostSelect();
+            await loadAnalytics();
+        }
+
+        async function loadPendingProviders() {
+            const { data, error } = await supabase.from('providers').select('*, users(full_name, email, phone)').eq('verified_by_admin', false);
+            const container = document.getElementById('pendingProvidersList');
+            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No pending provider verifications</div>'; return; }
+            container.innerHTML = data.map(provider => `
+                <div class="provider-card">
+                    <div class="incident-header"><strong>${provider.organization_name}</strong><span>${provider.provider_type}</span></div>
+                    <div>👤 ${provider.users?.full_name || 'N/A'}</div>
+                    <div>📧 ${provider.users?.email || 'N/A'}</div>
+                    <div>📜 License: ${provider.license_number}</div>
+                    <button onclick="verifyProvider('${provider.provider_id}')" class="btn-verify">✓ Verify Provider</button>
+                </div>
+            `).join('');
+        }
+
+        async function loadUsers() {
+            const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+            const container = document.getElementById('usersList');
+            if (error || !data) { container.innerHTML = '<div class="empty-state">Error loading users</div>'; return; }
+            container.innerHTML = data.filter(u => u.user_id !== currentUser.user_id).map(user => `
+                <div class="user-card">
+                    <div class="incident-header"><strong>${user.full_name}</strong><span class="status-badge">${user.role?.toUpperCase()}</span></div>
+                    <div>📧 ${user.email}</div>
+                    <div>📞 ${user.phone || 'N/A'}</div>
+                    <button onclick="removeUser('${user.user_id}')" class="btn-remove">🗑️ Remove User</button>
+                </div>
+            `).join('');
+            document.getElementById('totalUsers').textContent = data.length;
+        }
+
+        async function loadVideoReviews() {
+            const { data, error } = await supabase.from('emergency_requests').select('*').not('video_url', 'is', null);
+            const container = document.getElementById('videoReviewList');
+            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No videos pending review</div>'; return; }
+            container.innerHTML = data.map(incident => `
+                <div class="incident-card">
+                    <div class="incident-header"><strong>${incident.emergency_type}</strong><span>${incident.district}</span></div>
+                    <div>📝 ${incident.description?.substring(0, 60)}</div>
+                    <div style="background:#e2e8f0; padding:0.5rem; text-align:center; border-radius:8px; margin-top:8px">🎥 Video evidence recorded</div>
+                </div>
+            `).join('');
+        }
+
+        async function loadBoostSelect() {
+            const { data } = await supabase.from('emergency_requests').select('request_id, emergency_type, district, priority_level').not('status', 'eq', 'completed');
+            const select = document.getElementById('boostIncidentSelect');
+            select.innerHTML = '<option value="">Select incident to boost</option>' + (data || []).map(i => `<option value="${i.request_id}">${i.emergency_type} - ${i.district} (${i.priority_level || 'MEDIUM'})</option>`).join('');
+        }
+
+        async function loadAnalytics() {
+            const { count: total } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true });
+            const { count: active } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true }).not('status', 'eq', 'completed');
+            const { count: verified } = await supabase.from('providers').select('count', { count: 'exact', head: true }).eq('verified_by_admin', true);
+            document.getElementById('totalIncidents').textContent = total || 0;
+            document.getElementById('activeIncidents').textContent = active || 0;
+            document.getElementById('verifiedProviders').textContent = verified || 0;
+        }
+
+        window.verifyProvider = async (id) => {
+            const { error } = await supabase.from('providers').update({ verified_by_admin: true, verified_at: new Date(), verified_by: currentUser.user_id }).eq('provider_id', id);
+            if (error) alert('Error: ' + error.message);
+            else { alert('Provider verified!'); await loadPendingProviders(); await loadUsers(); await loadAnalytics(); }
+        };
+
+        window.removeUser = async (id) => {
+            if (confirm('Are you sure you want to remove this user? This will delete all their incidents.')) {
+                await supabase.from('emergency_requests').delete().eq('requestor_id', id);
+                const { error } = await supabase.from('users').delete().eq('user_id', id);
+                if (error) alert('Error: ' + error.message);
+                else { alert('User removed'); await loadUsers(); await loadAnalytics(); }
+            }
+        };
+
+        window.applyPriorityBoost = async () => {
+            const id = document.getElementById('boostIncidentSelect').value;
+            const reason = document.getElementById('boostReason').value;
+            if (!id) { alert('Select an incident'); return; }
+            const { data: incident } = await supabase.from('emergency_requests').select('admin_boost').eq('request_id', id).single();
+            const newBoost = (incident?.admin_boost || 0) + 5;
+            const { error } = await supabase.from('emergency_requests').update({ admin_boost: newBoost }).eq('request_id', id);
+            if (error) alert('Error: ' + error.message);
+            else {
+                await supabase.from('admin_boosts').insert({ request_id: id, admin_id: currentUser.user_id, boost_percentage: 5, reason });
+                alert('Priority boost applied!');
+                await loadBoostSelect();
+            }
+        };
+
+        window.logout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+        
+        checkAuth();
+    </script>
+</body>
+</html>

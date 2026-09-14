@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESRS | Emergency Service Report System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🚨</span>
+                <span class="logo-text">Emergency <span class="logo-highlight">Service Report</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#advanced" class="nav-link">Advanced</a>
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <button onclick="openLoginModal()" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button onclick="openRegisterModal()" class="btn-register">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+            <div class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-icon">🚨</span>
+                <span>Emergency Service Report System</span>
+            </div>
+            <h1>Rapid Response <span class="highlight">When Every Second Counts</span></h1>
+            <p>Complete Emergency Reporting Platform Connecting Citizens, Responders, and Administrators</p>
+            <div class="hero-buttons">
+                <button onclick="openLoginModal()" class="btn-primary">
+                    <i class="fas fa-exclamation-triangle"></i> Report Emergency
+                </button>
+                <a href="#features" class="btn-secondary">
+                    Learn More <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="emergency-numbers">
+                <div class="emergency-card"><i class="fas fa-phone-alt"></i><span>Police: <strong>100</strong></span></div>
+                <div class="emergency-card"><i class="fas fa-ambulance"></i><span>Ambulance: <strong>102</strong></span></div>
+                <div class="emergency-card"><i class="fas fa-fire-extinguisher"></i><span>Fire: <strong>101</strong></span></div>
+                <div class="emergency-card"><i class="fas fa-water"></i><span>Disaster: <strong>1155</strong></span></div>
+            </div>
+        </div>
+        <div class="hero-stats">
+            <div class="stat"><div class="stat-number">98%</div><div class="stat-label">Response Rate</div></div>
+            <div class="stat"><div class="stat-number">15min</div><div class="stat-label">Avg Response</div></div>
+            <div class="stat"><div class="stat-number">24/7</div><div class="stat-label">Support</div></div>
+            <div class="stat"><div class="stat-number">100+</div><div class="stat-label">Response Units</div></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Key Features</h2>
+            <p>Complete emergency management solution for all stakeholders</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>For Citizens</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> One-tap emergency reporting</li>
+                    <li><i class="fas fa-check-circle"></i> Smart severity assessment</li>
+                    <li><i class="fas fa-check-circle"></i> Upload photo/video evidence</li>
+                    <li><i class="fas fa-check-circle"></i> Real-time incident tracking</li>
+                    <li><i class="fas fa-check-circle"></i> Submit feedback & ratings</li>
+                </ul>
+                <button onclick="openRegisterModal()" class="feature-btn">Register as Citizen →</button>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚒</div>
+                <h3>For Responders</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Intelligent priority queue</li>
+                    <li><i class="fas fa-check-circle"></i> Accept & update incident status</li>
+                    <li><i class="fas fa-check-circle"></i> View assigned incidents history</li>
+                    <li><i class="fas fa-check-circle"></i> Access evidence media</li>
+                    <li><i class="fas fa-check-circle"></i> Interactive response map</li>
+                </ul>
+                <button onclick="openRegisterModal()" class="feature-btn">Join as Responder →</button>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👨‍💼</div>
+                <h3>For Administrators</h3>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Verify response units</li>
+                    <li><i class="fas fa-check-circle"></i> Priority boost control</li>
+                    <li><i class="fas fa-check-circle"></i> Review all evidence</li>
+                    <li><i class="fas fa-check-circle"></i> Real-time analytics dashboard</li>
+                    <li><i class="fas fa-check-circle"></i> Hotspot detection & resource planning</li>
+                </ul>
+                <button onclick="openLoginModal()" class="feature-btn">Admin Access →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced Features Section -->
+    <section class="advanced" id="advanced">
+        <div class="section-header">
+            <h2>Advanced Capabilities</h2>
+            <p>Cutting-edge technology for intelligent emergency response</p>
+        </div>
+        <div class="advanced-grid">
+            <div class="advanced-card">
+                <div class="advanced-icon">🎯</div>
+                <h3>Smart Priority Scoring</h3>
+                <p>Intelligent incident prioritization based on severity, time sensitivity, proximity, and administrative review</p>
+                <div class="priority-weights">
+                    <div class="weight-item"><span>Human Harm Assessment</span><div class="weight-bar"><div class="weight-fill" style="width: 55%"></div></div></div>
+                    <div class="weight-item"><span>Time Sensitivity</span><div class="weight-bar"><div class="weight-fill" style="width: 20%"></div></div></div>
+                    <div class="weight-item"><span>Location Proximity</span><div class="weight-bar"><div class="weight-fill" style="width: 20%"></div></div></div>
+                    <div class="weight-item"><span>Admin Override</span><div class="weight-bar"><div class="weight-fill" style="width: 5%"></div></div></div>
+                </div>
+            </div>
+            <div class="advanced-card">
+                <div class="advanced-icon">🔍</div>
+                <h3>Fast Incident Search</h3>
+                <p>Powerful full-text search across all incident records with smart relevance scoring for quick information retrieval</p>
+                <div class="search-demo"><i class="fas fa-search"></i> Search incidents in milliseconds</div>
+            </div>
+            <div class="advanced-card">
+                <div class="advanced-icon">📍</div>
+                <h3>Hotspot Detection</h3>
+                <p>Automatic identification of high-activity areas for proactive resource allocation and strategic planning</p>
+                <div class="hotspot-demo"><i class="fas fa-chart-line"></i> Real-time hotspot monitoring</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p>Simple 4-step process to get emergency help</p>
+        </div>
+        <div class="steps">
+            <div class="step"><div class="step-number">1</div><div class="step-icon">📢</div><h3>Report Emergency</h3><p>Report incident with location, type, and severity details</p></div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step"><div class="step-number">2</div><div class="step-icon">⚡</div><h3>Smart Prioritization</h3><p>System calculates priority based on severity factors</p></div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step"><div class="step-number">3</div><div class="step-icon">🚒</div><h3>Responder Dispatch</h3><p>Responders see priority queue and accept requests</p></div>
+            <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+            <div class="step"><div class="step-number">4</div><div class="step-icon">📍</div><h3>Real-time Tracking</h3><p>Track responder status from en-route to completion</p></div>
+        </div>
+    </section>
+
+    <!-- Login/Register Modal -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Emergency Service Report System</h2>
+                <span class="close" onclick="closeAuthModal()">&times;</span>
+            </div>
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+                <button class="tab-btn" onclick="switchTab('register')">Register</button>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="loginTab" class="tab-content active">
+                <form id="loginForm">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="Email address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="modal-btn">
+                        <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                    </button>
+                </form>
+                <p class="modal-footer-text">
+                    <i class="fas fa-info-circle"></i> Demo Accounts:<br>
+                    citizen@esrs.com / password123<br>
+                    responder@esrs.com / password123<br>
+                    admin@esrs.com / password123
+                </p>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="registerTab" class="tab-content">
+                <form id="registerForm">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="regName" placeholder="Full Name" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="regEmail" placeholder="Email address" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="regPhone" placeholder="Phone Number (98XXXXXXXX)" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-user-tag"></i>
+                        <select id="regRole">
+                            <option value="requester">Citizen</option>
+                            <option value="provider">Responder</option>
+                        </select>
+                    </div>
+                    <div id="responderFields" style="display:none">
+                        <div class="input-group">
+                            <i class="fas fa-building"></i>
+                            <input type="text" id="regOrganization" placeholder="Organization Name">
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-tag"></i>
+                            <select id="regResponderType">
+                                <option value="Medical">Medical/Ambulance</option>
+                                <option value="Fire">Fire Department</option>
+                                <option value="Police">Police</option>
+                                <option value="Disaster">Disaster Response</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-id-card"></i>
+                            <input type="text" id="regLicense" placeholder="License Number">
+                        </div>
+                    </div>
+                    <button type="submit" class="modal-btn">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4><i class="fas fa-shield-alt"></i> Emergency Service Report System</h4>
+                <p>Rapid Response When Every Second Counts</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4><i class="fas fa-link"></i> Quick Links</h4>
+                <a href="#" onclick="openLoginModal()">Emergency Dashboard</a>
+                <a href="#features">Features</a>
+                <a href="#advanced">Advanced</a>
+                <a href="#how-it-works">How It Works</a>
+            </div>
+            <div class="footer-section">
+                <h4><i class="fas fa-phone-alt"></i> Emergency Contacts</h4>
+                <p><strong>Police:</strong> 100</p><p><strong>Ambulance:</strong> 102</p>
+                <p><strong>Fire:</strong> 101</p><p><strong>Disaster:</strong> 1155</p>
+            </div>
+            <div class="footer-section">
+                <h4><i class="fas fa-envelope"></i> Contact</h4>
+                <p>📧 support@esrs.com</p>
+                <p>📞 1-800-EMERGENCY</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Emergency Service Report System | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
+
+        let supabaseClient = null;
+
+        // Initialize Supabase
+        async function initSupabase() {
+            const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        }
+
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        });
+
+        function openLoginModal() {
+            document.getElementById('authModal').style.display = 'flex';
+            switchTab('login');
+        }
+
+        function openRegisterModal() {
+            document.getElementById('authModal').style.display = 'flex';
+            switchTab('register');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        function switchTab(tab) {
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+            const tabs = document.querySelectorAll('.tab-btn');
+            
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                tabs[0].classList.add('active');
+                tabs[1].classList.remove('active');
+            } else {
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                tabs[0].classList.remove('active');
+                tabs[1].classList.add('active');
+            }
+        }
+
+        // Show/hide responder fields
+        const roleSelect = document.getElementById('regRole');
+        if (roleSelect) {
+            roleSelect.addEventListener('change', function() {
+                const responderFields = document.getElementById('responderFields');
+                responderFields.style.display = this.value === 'provider' ? 'block' : 'none';
+            });
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('authModal');
+            if (event.target === modal) closeAuthModal();
+        }
+
+        // ============ LOGIN FUNCTION ============
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const submitBtn = e.target.querySelector('button');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            submitBtn.disabled = true;
+            
+            try {
+                if (!supabaseClient) await initSupabase();
+                
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    alert('Login Failed: ' + error.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                } else {
+                    // Get user role from database
+                    const { data: userData, error: userError } = await supabaseClient
+                        .from('users')
+                        .select('role')
+                        .eq('user_id', data.user.id)
+                        .single();
+                    
+                    if (userError) {
+                        console.error('Error fetching user role:', userError);
+                        alert('Login successful! Redirecting to Requester Dashboard...');
+                        window.location.href = 'requester-dashboard.html';
+                    } else {
+                        const role = userData.role;
+                        alert('Login successful! Redirecting to ' + role.toUpperCase() + ' dashboard...');
+                        
+                        if (role === 'admin') {
+                            window.location.href = 'admin-dashboard.html';
+                        } else if (role === 'provider') {
+                            window.location.href = 'provider-dashboard.html';
+                        } else {
+                            window.location.href = 'requester-dashboard.html';
+                        }
+                    }
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // ============ REGISTER FUNCTION ============
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const fullName = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const role = document.getElementById('regRole').value;
+            
+            const submitBtn = e.target.querySelector('button');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+            submitBtn.disabled = true;
+            
+            try {
+                if (!supabaseClient) await initSupabase();
+                
+                const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            phone: phone,
+                            role: role
+                        }
+                    }
+                });
+                
+                if (signUpError) {
+                    alert('Registration Failed: ' + signUpError.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    return;
+                }
+                
+                const { error: userError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        user_id: authData.user.id,
+                        email: email,
+                        phone: phone,
+                        full_name: fullName,
+                        role: role,
+                        is_verified: true
+                    });
+                
+                if (userError) {
+                    console.error('Error adding to users table:', userError);
+                }
+                
+                if (role === 'provider') {
+                    const orgName = document.getElementById('regOrganization').value;
+                    const providerType = document.getElementById('regResponderType').value;
+                    const license = document.getElementById('regLicense').value;
+                    
+                    const { error: providerError } = await supabaseClient
+                        .from('providers')
+                        .insert({
+                            provider_id: authData.user.id,
+                            organization_name: orgName,
+                            provider_type: providerType,
+                            license_number: license,
+                            verified_by_admin: false
+                        });
+                    
+                    if (providerError) console.error('Error adding to providers:', providerError);
+                }
+                
+                alert('Registration successful! Please login.');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                switchTab('login');
+                document.getElementById('loginEmail').value = email;
+                
+            } catch (err) {
+                alert('Error: ' + err.message);
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Initialize Supabase on page load
+        initSupabase();
+    </script>
+</body>
+</html>

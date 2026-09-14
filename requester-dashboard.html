@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requester Dashboard | ESRS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
+        
+        .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 15px; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.8rem; }
+        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #1e3a5f, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .user-details { text-align: right; }
+        .user-name { font-weight: 700; font-size: 1rem; }
+        .user-email { font-size: 0.7rem; color: #64748b; }
+        .user-role-badge { font-size: 0.6rem; background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 2px; }
+        .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
+        
+        .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 1.5rem; }
+        .requester-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        
+        .map-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 80px; }
+        .map-card h3 { padding: 1rem 1.5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        #requesterMap { height: 450px; width: 100%; background: #e2e8f0; }
+        .map-controls { padding: 1rem; display: flex; gap: 0.5rem; border-top: 1px solid #e2e8f0; }
+        
+        .form-card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-height: 80vh; overflow-y: auto; }
+        .form-card h3 { margin-bottom: 1.2rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.4rem; color: #334155; font-size: 0.85rem; }
+        select, input, textarea { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; }
+        .location-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+        
+        .severity-container { background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%); padding: 1.2rem; border-radius: 16px; margin: 1rem 0; border: 1px solid #fee2e2; }
+        .severity-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px; }
+        .severity-title { font-weight: 700; color: #991b1b; font-size: 0.9rem; }
+        .severity-result { background: white; padding: 0.8rem 1rem; border-radius: 12px; text-align: center; min-width: 160px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .severity-percentage { font-size: 1.8rem; font-weight: 800; display: block; line-height: 1; }
+        .severity-status { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 700; font-size: 0.7rem; margin-top: 5px; }
+        .severity-status.CRITICAL { background: #dc2626; color: white; }
+        .severity-status.HIGH { background: #f97316; color: white; }
+        .severity-status.MEDIUM { background: #eab308; color: #1e293b; }
+        .severity-status.LOW { background: #22c55e; color: white; }
+        .question-card { background: white; padding: 0.8rem; border-radius: 12px; margin-bottom: 0.8rem; border: 1px solid #e2e8f0; }
+        .question-text { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem; color: #334155; }
+        .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .radio-group label { display: flex; align-items: center; gap: 0.3rem; font-weight: normal; font-size: 0.75rem; cursor: pointer; }
+        
+        .btn-primary { width: 100%; padding: 0.8rem; background: linear-gradient(135deg, #dc2626, #e11d48); color: white; border: none; border-radius: 40px; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+        .btn-secondary { padding: 0.5rem 1rem; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 30px; cursor: pointer; font-size: 0.8rem; }
+        .btn-danger { background: #dc2626; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 15px; cursor: pointer; font-size: 0.7rem; }
+        
+        .incident-list { max-height: 500px; overflow-y: auto; }
+        .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid; transition: all 0.2s; cursor: pointer; }
+        .incident-card:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px; }
+        .priority-badge { padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .priority-CRITICAL { background: #dc2626; color: white; }
+        .priority-HIGH { background: #f97316; color: white; }
+        .priority-MEDIUM { background: #eab308; color: #1e293b; }
+        .priority-LOW { background: #22c55e; color: white; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-assigned { background: #dbeafe; color: #2563eb; }
+        .status-completed { background: #d1fae5; color: #059669; }
+        
+        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-top: 1.5rem; }
+        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
+        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
+        .selected-location { background: #e0f2fe; padding: 0.5rem; border-radius: 8px; margin: 0.5rem 0; font-size: 0.8rem; display: none; }
+        .autofill-hint { font-size: 0.7rem; color: #10b981; margin-top: 5px; display: block; }
+        
+        .search-container { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .search-container input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; }
+        .search-results { max-height: 400px; overflow-y: auto; margin-top: 1rem; }
+        .btn-clear { background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; padding: 0.5rem 1rem; border-radius: 30px; cursor: pointer; font-size: 0.8rem; }
+        .btn-clear:hover { background: #e2e8f0; }
+        
+        .video-container { margin-top: 12px; border-radius: 12px; overflow: hidden; background: #000; position: relative; }
+        .video-container video { width: 100%; max-height: 300px; object-fit: contain; background: #000; cursor: pointer; }
+        .video-thumb { position: relative; cursor: pointer; }
+        .video-thumb img { width: 100%; border-radius: 12px; }
+        .video-thumb .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .video-thumb .play-icon i { font-size: 24px; color: white; margin-left: 4px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; }
+        .modal-header h2 { font-size: 1.3rem; color: #1e293b; }
+        .close-modal { font-size: 1.8rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; }
+        .close-modal:hover { color: #dc2626; }
+        .modal-body { padding: 1.5rem; }
+        .detail-row { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+        .detail-label { font-weight: 600; color: #64748b; font-size: 0.7rem; text-transform: uppercase; }
+        .detail-value { font-size: 1rem; color: #1e293b; margin-top: 0.2rem; }
+        .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        @media (max-width: 900px) { .requester-layout { grid-template-columns: 1fr; } .form-card { max-height: none; } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo"><span class="logo-icon">🚨</span><span class="logo-text">Requester Dashboard</span></div>
+        <div class="user-info">
+            <div class="user-details">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-email" id="userEmail"></div>
+                <span class="user-role-badge" id="userRole">Requester</span>
+            </div>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="requester-layout">
+            <div class="map-card">
+                <h3>🗺️ Click on Map to Report Emergency</h3>
+                <div id="requesterMap"></div>
+                <div class="map-controls">
+                    <button onclick="centerUserLocation()" class="btn-secondary" id="myLocationBtn">📍 My Location</button>
+                </div>
+                <div id="selectedLocationDisplay" class="selected-location"></div>
+            </div>
+
+            <div class="form-card">
+                <h3>📢 Report New Emergency</h3>
+                <form id="emergencyForm">
+                    <div class="form-group">
+                        <label>Emergency Type *</label>
+                        <select id="incidentType" required>
+                            <option value="Medical">🚑 Medical Emergency</option>
+                            <option value="Fire">🔥 Fire Hazard</option>
+                            <option value="Police">👮 Police Incident</option>
+                            <option value="Accident">🚗 Traffic Accident</option>
+                            <option value="NaturalDisaster">🌊 Natural Disaster</option>
+                        </select>
+                    </div>
+                    <div id="selectedCoords" style="display:none"></div>
+                    
+                    <div class="form-group">
+                        <label>📍 Address Details (Auto-fills when you click map)</label>
+                        <div class="location-grid">
+                            <select id="province">
+                                <option value="">Select Province</option>
+                                <option>Bagmati Province</option>
+                                <option>Gandaki Province</option>
+                                <option>Lumbini Province</option>
+                                <option>Karnali Province</option>
+                                <option>Province No. 1</option>
+                                <option>Madhesh Province</option>
+                                <option>Sudurpashchim Province</option>
+                            </select>
+                            <input type="text" id="district" placeholder="District">
+                            <input type="text" id="municipality" placeholder="Municipality/City">
+                            <input type="number" id="ward" placeholder="Ward Number">
+                            <input type="text" id="tole" placeholder="Tole/Landmark">
+                        </div>
+                        <div id="autofillHint" class="autofill-hint">📍 Click on the map to auto-fill address</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📝 Incident Details *</label>
+                        <textarea id="details" rows="2" placeholder="Describe what happened..." required></textarea>
+                    </div>
+                    
+                    <div class="severity-container">
+                        <div class="severity-header">
+                            <span class="severity-title">⚠️ Severity Assessment (55% Priority Weight)</span>
+                            <div class="severity-result">
+                                <span class="severity-percentage" id="severityPercentage">0%</span>
+                                <span class="severity-status" id="severityStatus">NOT ASSESSED</span>
+                            </div>
+                        </div>
+                        
+                        <div class="question-card">
+                            <div class="question-text">Q1: Is there immediate threat to human life?</div>
+                            <div class="radio-group">
+                                <label><input type="radio" name="q1" value="100" onchange="calculatePreview()"> Yes - Life threatening</label>
+                                <label><input type="radio" name="q1" value="50" onchange="calculatePreview()"> Possibly</label>
+                                <label><input type="radio" name="q1" value="0" onchange="calculatePreview()"> No</label>
+                            </div>
+                        </div>
+                        
+                        <div class="question-card">
+                            <div class="question-text">Q2: How many people are affected?</div>
+                            <div class="radio-group">
+                                <label><input type="radio" name="q2" value="100" onchange="calculatePreview()"> 5+ people</label>
+                                <label><input type="radio" name="q2" value="60" onchange="calculatePreview()"> 2-4 people</label>
+                                <label><input type="radio" name="q2" value="20" onchange="calculatePreview()"> 1 person</label>
+                                <label><input type="radio" name="q2" value="0" onchange="calculatePreview()"> None</label>
+                            </div>
+                        </div>
+                        
+                        <div class="question-card">
+                            <div class="question-text">Q3: Is medical attention required immediately?</div>
+                            <div class="radio-group">
+                                <label><input type="radio" name="q3" value="100" onchange="calculatePreview()"> Critical - Immediate</label>
+                                <label><input type="radio" name="q3" value="50" onchange="calculatePreview()"> Within 30 minutes</label>
+                                <label><input type="radio" name="q3" value="0" onchange="calculatePreview()"> Not urgent</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🎥 Video Evidence (Optional, Max 50MB)</label>
+                        <input type="file" id="videoUpload" accept="video/mp4,video/webm">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">🚨 SUBMIT EMERGENCY REPORT</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🔍 Search All Incidents <span style="font-size:0.7rem; font-weight:normal">(Real-time - results appear as you type)</span></h3>
+            <div class="search-container">
+                <input type="text" id="searchQuery" placeholder="Type to search incidents (e.g., 'fire', 'accident', 'Thamel')..." 
+                       onkeyup="realTimeSearch()" onfocus="realTimeSearch()">
+                <button onclick="clearSearch()" class="btn-clear">✖️ Clear</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <div class="card">
+            <h3>📋 All Incident Reports <span style="font-size:0.7rem; font-weight:normal">(Showing all emergencies from all requesters)</span></h3>
+            <div id="myIncidentsList" class="incident-list"><div class="empty-state">No incidents reported yet. Click on the map to report an emergency.</div></div>
+        </div>
+    </div>
+
+    <div id="incidentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Incident Details</h2>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://emergency-response-system-liard.vercel.app';
+        
+        console.log('API_URL:', API_URL);
+        
+        let currentUser = null;
+        let map = null;
+        let selectedLat = null, selectedLng = null;
+        let marker = null;
+        let locationMarker = null;
+        let searchTimeout = null;
+        let allIncidentsCache = [];
+
+        window.calculatePreview = function() {
+            const q1 = parseInt(document.querySelector('input[name="q1"]:checked')?.value || 0);
+            const q2 = parseInt(document.querySelector('input[name="q2"]:checked')?.value || 0);
+            const q3 = parseInt(document.querySelector('input[name="q3"]:checked')?.value || 0);
+            const percentage = Math.round((q1 + q2 + q3) / 3);
+            
+            let status = 'LOW';
+            if (percentage >= 80) status = 'CRITICAL';
+            else if (percentage >= 60) status = 'HIGH';
+            else if (percentage >= 40) status = 'MEDIUM';
+            
+            document.getElementById('severityPercentage').innerHTML = `${percentage}%`;
+            document.getElementById('severityStatus').textContent = status;
+            document.getElementById('severityStatus').className = `severity-status ${status}`;
+        };
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            
+            const { data: userData } = await supabase.from('users').select('*').eq('user_id', session.user.id).single();
+            currentUser = userData || { user_id: session.user.id, email: session.user.email, full_name: session.user.email.split('@')[0], role: 'requester' };
+            
+            document.getElementById('userName').textContent = currentUser?.full_name || currentUser?.email || 'Requester';
+            document.getElementById('userEmail').textContent = currentUser?.email || '';
+            document.getElementById('userRole').textContent = 'REQUESTER';
+            
+            if (currentUser?.role !== 'requester') {
+                if (currentUser?.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else if (currentUser?.role === 'provider') window.location.href = 'provider-dashboard.html';
+                return;
+            }
+            await loadAllIncidents();
+            await loadAllIncidentsForSearch();
+        }
+        
+        async function loadAllIncidents() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/ranked-incidents`);
+                const result = await response.json();
+                
+                if (result.success && result.incidents) {
+                    const allIncidents = result.incidents;
+                    const container = document.getElementById('myIncidentsList');
+                    
+                    if (allIncidents.length === 0) {
+                        container.innerHTML = '<div class="empty-state">No incidents reported yet. Click on the map to report an emergency.</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = allIncidents.map(incident => {
+                        const priority = incident.priority_level || 'LOW';
+                        const priorityScore = Math.round(incident.priority_score || 0);
+                        const reportedBy = incident.requestor_id === currentUser.user_id ? 'You' : 'Another User';
+                        const hasVideo = incident.video_url && incident.video_url !== '';
+                        const idStr = String(incident.id);
+                        
+                        return `
+                        <div class="incident-card" style="border-left-color: ${getPriorityColor(priority)}" onclick='showIncidentDetails(${JSON.stringify(incident).replace(/'/g, "&#39;")})'>
+                            <div class="incident-header">
+                                <strong>🚨 ${incident.type}</strong>
+                                <span class="priority-badge priority-${priority}">${priority} (${priorityScore})</span>
+                            </div>
+                            <div>📍 ${incident.location || 'N/A'}</div>
+                            <div>📝 ${incident.description?.substring(0, 80) || 'No description'}${incident.description?.length > 80 ? '...' : ''}</div>
+                            <div>📊 Weighted Score: ${incident.priority_score?.toFixed(1) || 0}/100</div>
+                            <div>👤 Reported by: ${reportedBy}</div>
+                            <div>⏱️ ${new Date(incident.created_at).toLocaleString()}</div>
+                            <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
+                            ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
+                            ${hasVideo ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;"><i class="fas fa-video"></i> 📹 Video evidence attached - Click to view</div>` : ''}
+                        </div>
+                    `}).join('');
+                } else {
+                    await loadAllIncidentsFallback();
+                }
+            } catch (error) {
+                console.error('API error, using fallback:', error);
+                await loadAllIncidentsFallback();
+            }
+        }
+        
+        async function loadAllIncidentsFallback() {
+            const { data, error } = await supabase
+                .from('emergency_requests')
+                .select('*')
+                .order('final_priority', { ascending: false });
+            
+            const container = document.getElementById('myIncidentsList');
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No incidents reported yet.</div>';
+                return;
+            }
+            
+            container.innerHTML = data.map(incident => {
+                const priority = incident.priority_level || 'LOW';
+                const priorityScore = Math.round(incident.final_priority || 0);
+                const reportedBy = incident.requestor_id === currentUser.user_id ? 'You' : 'Another User';
+                const hasVideo = incident.video_url && incident.video_url !== '';
+                const idStr = String(incident.request_id);
+                return `
+                <div class="incident-card" style="border-left-color: ${getPriorityColor(priority)}" onclick='showIncidentDetailsFallback(${JSON.stringify(incident).replace(/'/g, "&#39;")})'>
+                    <div class="incident-header">
+                        <strong>🚨 ${incident.emergency_type}</strong>
+                        <span class="priority-badge priority-${priority}">${priority} (${priorityScore})</span>
+                    </div>
+                    <div>📍 ${incident.district || 'N/A'}, ${incident.municipality || 'N/A'}</div>
+                    <div>📝 ${incident.description?.substring(0, 80) || 'No description'}</div>
+                    <div>👤 Reported by: ${reportedBy}</div>
+                    <div>⏱️ ${new Date(incident.created_at).toLocaleString()}</div>
+                    <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
+                    ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
+                    ${hasVideo ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;"><i class="fas fa-video"></i> 📹 Video evidence attached - Click to view</div>` : ''}
+                </div>
+            `}).join('');
+        }
+        
+        async function loadAllIncidentsForSearch() {
+            try {
+                const response = await fetch(`${API_URL}/api/ranked-incidents`);
+                const result = await response.json();
+                if (result.success && result.incidents) {
+                    allIncidentsCache = result.incidents;
+                }
+            } catch (error) {
+                console.error('Error loading incidents for search:', error);
+            }
+        }
+        
+        window.realTimeSearch = function() {
+            const query = document.getElementById('searchQuery').value;
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            if (!query || query.trim() === '') {
+                resultsContainer.innerHTML = '';
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = '<div style="text-align:center; padding:1rem; color:#64748b;">🔍 Searching all incidents...</div>';
+            
+            searchTimeout = setTimeout(async () => {
+                await performRealTimeSearch(query);
+            }, 300);
+        };
+        
+        async function performRealTimeSearch(query) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            try {
+                const localResults = allIncidentsCache.filter(incident => 
+                    incident.description?.toLowerCase().includes(query.toLowerCase()) ||
+                    incident.type?.toLowerCase().includes(query.toLowerCase()) ||
+                    incident.location?.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (localResults.length > 0) {
+                    resultsContainer.innerHTML = localResults.slice(0, 20).map(incident => {
+                        const reportedBy = incident.requestor_id === currentUser.user_id ? 'You' : 'Another User';
+                        return `
+                        <div class="incident-card" style="border-left-color: #3b82f6; cursor:pointer; margin-bottom:0.5rem;" onclick='showSearchResultDetails(${JSON.stringify(incident).replace(/'/g, "&#39;")})'>
+                            <div class="incident-header">
+                                <strong>🚨 ${incident.type}</strong>
+                                <span style="font-size:0.7rem; color:#3b82f6">Found in search</span>
+                            </div>
+                            <div>📍 ${incident.location || 'N/A'}</div>
+                            <div>📝 ${incident.description?.substring(0, 100) || 'No description'}</div>
+                            <div>👤 Reported by: ${reportedBy}</div>
+                            <div>⏱️ ${new Date(incident.created_at).toLocaleString()}</div>
+                        </div>
+                    `}).join('');
+                } else {
+                    resultsContainer.innerHTML = '<div class="empty-state">No incidents found matching your search.</div>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = '<div class="empty-state">Search error. Please try again.</div>';
+            }
+        }
+        
+        window.clearSearch = function() {
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchResults').style.display = 'none';
+        };
+        
+        window.showSearchResultDetails = function(incident) {
+            const priority = incident.priority_level || 'LOW';
+            const priorityScore = Math.round(incident.priority_score || 0);
+            const breakdown = incident.breakdown || {};
+            const hasVideo = incident.video_url && incident.video_url !== '';
+            
+            document.getElementById('modalTitle').innerHTML = `🚨 ${incident.type} Incident`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Priority Level</div>
+                    <div class="detail-value"><span class="priority-tag priority-${priority}">${priority}</span> (${priorityScore}/100)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Priority Breakdown</div>
+                    <div class="detail-value">
+                        • Human Harm (55%): ${Math.round(breakdown.humanHarm || 0)}%<br>
+                        • Time Decay (20%): ${Math.round(breakdown.timeDecay || 0)}%<br>
+                        • Proximity (20%): ${Math.round(breakdown.proximity || 0)}%<br>
+                        • Admin Boost (5%): ${Math.round(breakdown.adminBoost || 0)}%
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${incident.location || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${incident.description || 'No description'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(incident.created_at).toLocaleString()}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
+                </div>
+                ${hasVideo ? `
+                <div class="detail-row">
+                    <div class="detail-label">Video Evidence</div>
+                    <div class="detail-value">
+                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
+                            <div class="video-thumb">
+                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover;">
+                                <div class="play-icon"><i class="fas fa-play"></i></div>
+                            </div>
+                            <video style="display:none; width:100%; max-height:300px;" controls>
+                                <source src="${incident.video_url}" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+        
+        window.playVideo = function(container, videoUrl) {
+            const thumb = container.querySelector('.video-thumb');
+            const video = container.querySelector('video');
+            if (thumb && video) {
+                thumb.style.display = 'none';
+                video.style.display = 'block';
+                video.play();
+            }
+        };
+        
+        function initMap() {
+            map = L.map('requesterMap').setView([27.7172, 85.3240], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+            
+            map.on('click', async function(e) {
+                selectedLat = e.latlng.lat;
+                selectedLng = e.latlng.lng;
+                if (marker) map.removeLayer(marker);
+                marker = L.marker([selectedLat, selectedLng]).addTo(map).bindPopup('📍 Selected Location').openPopup();
+                document.getElementById('selectedCoords').innerHTML = `<input type="hidden" id="lat" value="${selectedLat}"><input type="hidden" id="lng" value="${selectedLng}">`;
+                await reverseGeocodeAndFill(selectedLat, selectedLng);
+            });
+        }
+        
+        async function reverseGeocodeAndFill(lat, lng) {
+            const hintDiv = document.getElementById('autofillHint');
+            hintDiv.innerHTML = '⏳ Fetching address...';
+            hintDiv.style.color = '#f59e0b';
+            hintDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en&zoom=18`);
+                const data = await response.json();
+                
+                if (data && data.address) {
+                    const addr = data.address;
+                    
+                    const provinceMap = {
+                        'bagmati': 'Bagmati Province',
+                        'gandaki': 'Gandaki Province', 
+                        'lumbini': 'Lumbini Province',
+                        'karnali': 'Karnali Province',
+                        'province 1': 'Province No. 1',
+                        'province1': 'Province No. 1',
+                        'madhesh': 'Madhesh Province',
+                        'sudurpashchim': 'Sudurpashchim Province'
+                    };
+                    
+                    let provinceValue = '';
+                    if (addr.state || addr.province) {
+                        const stateName = (addr.state || addr.province).toLowerCase();
+                        for (const [key, value] of Object.entries(provinceMap)) {
+                            if (stateName.includes(key)) {
+                                provinceValue = value;
+                                break;
+                            }
+                        }
+                        if (!provinceValue) provinceValue = addr.state || addr.province;
+                    }
+                    if (provinceValue) document.getElementById('province').value = provinceValue;
+                    if (addr.county || addr.district) document.getElementById('district').value = addr.county || addr.district;
+                    if (addr.city || addr.town || addr.village || addr.municipality) document.getElementById('municipality').value = addr.city || addr.town || addr.village || addr.municipality;
+                    if (addr.ward || addr.suburb) {
+                        const wardMatch = (addr.ward || addr.suburb || '').match(/\d+/);
+                        if (wardMatch) document.getElementById('ward').value = wardMatch[0];
+                    }
+                    if (addr.suburb || addr.neighbourhood || addr.road) document.getElementById('tole').value = addr.suburb || addr.neighbourhood || addr.road;
+                    
+                    const displayParts = [];
+                    if (addr.road) displayParts.push(addr.road);
+                    if (addr.suburb || addr.neighbourhood) displayParts.push(addr.suburb || addr.neighbourhood);
+                    if (addr.city || addr.town) displayParts.push(addr.city || addr.town);
+                    if (addr.county || addr.district) displayParts.push(addr.county || addr.district);
+                    if (provinceValue) displayParts.push(provinceValue);
+                    
+                    const displayAddress = displayParts.join(', ') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    document.getElementById('selectedLocationDisplay').style.display = 'block';
+                    document.getElementById('selectedLocationDisplay').innerHTML = `📍 <strong>Selected:</strong> ${displayAddress}`;
+                    hintDiv.innerHTML = '✅ Address auto-filled! You can edit if needed.';
+                    hintDiv.style.color = '#10b981';
+                    setTimeout(() => { hintDiv.style.display = 'none'; }, 3000);
+                } else {
+                    throw new Error('No address data');
+                }
+            } catch (error) {
+                console.error('Reverse geocoding error:', error);
+                document.getElementById('selectedLocationDisplay').style.display = 'block';
+                document.getElementById('selectedLocationDisplay').innerHTML = `📍 <strong>Selected coordinates:</strong> ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                hintDiv.innerHTML = '⚠️ Could not fetch address. Please fill manually.';
+                hintDiv.style.color = '#dc2626';
+                setTimeout(() => { hintDiv.style.display = 'none'; }, 3000);
+            }
+        }
+        
+        window.centerUserLocation = function() {
+            const btn = document.getElementById('myLocationBtn');
+            btn.innerHTML = '📍 Getting location...';
+            btn.disabled = true;
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        map.setView([lat, lng], 16);
+                        if (locationMarker) map.removeLayer(locationMarker);
+                        locationMarker = L.marker([lat, lng], {
+                            icon: L.divIcon({ className: 'current-location-marker', html: '📍', iconSize: [20, 20] })
+                        }).addTo(map).bindPopup('📍 Your Current Location').openPopup();
+                        selectedLat = lat;
+                        selectedLng = lng;
+                        if (marker) map.removeLayer(marker);
+                        marker = L.marker([lat, lng]).addTo(map).bindPopup('📍 Selected Location').openPopup();
+                        document.getElementById('selectedCoords').innerHTML = `<input type="hidden" id="lat" value="${lat}"><input type="hidden" id="lng" value="${lng}">`;
+                        await reverseGeocodeAndFill(lat, lng);
+                        btn.innerHTML = '📍 My Location';
+                        btn.disabled = false;
+                    },
+                    function(error) {
+                        let errorMsg = 'Could not get location. ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED: errorMsg += 'Please allow location access.'; break;
+                            case error.POSITION_UNAVAILABLE: errorMsg += 'Location unavailable.'; break;
+                            default: errorMsg += 'Try again.';
+                        }
+                        alert(errorMsg);
+                        btn.innerHTML = '📍 My Location';
+                        btn.disabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser');
+                btn.innerHTML = '📍 My Location';
+                btn.disabled = false;
+            }
+        };
+        
+        window.showIncidentDetails = function(incident) {
+            const priority = incident.priority_level || 'LOW';
+            const priorityScore = Math.round(incident.priority_score || 0);
+            const breakdown = incident.breakdown || {};
+            const hasVideo = incident.video_url && incident.video_url !== '';
+            
+            document.getElementById('modalTitle').innerHTML = `🚨 ${incident.type} Incident`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Weighted Priority Score</div>
+                    <div class="detail-value"><span class="priority-tag priority-${priority}">${priority}</span> (${priorityScore}/100)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Priority Breakdown</div>
+                    <div class="detail-value">
+                        • Human Harm (55%): ${Math.round(breakdown.humanHarm || 0)}%<br>
+                        • Time Decay (20%): ${Math.round(breakdown.timeDecay || 0)}%<br>
+                        • Proximity (20%): ${Math.round(breakdown.proximity || 0)}%<br>
+                        • Admin Boost (5%): ${Math.round(breakdown.adminBoost || 0)}%
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${incident.location || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${incident.description || 'No description'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(incident.created_at).toLocaleString()}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
+                </div>
+                ${hasVideo ? `
+                <div class="detail-row">
+                    <div class="detail-label">Video Evidence</div>
+                    <div class="detail-value">
+                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
+                            <div class="video-thumb">
+                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover; border-radius:12px;">
+                                <div class="play-icon"><i class="fas fa-play"></i></div>
+                            </div>
+                            <video style="display:none; width:100%; max-height:300px; border-radius:12px;" controls>
+                                <source src="${incident.video_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                </div>
+                ` : '<div class="detail-row"><div class="detail-label">Video Evidence</div><div class="detail-value">No video uploaded</div></div>'}
+            `;
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+        
+        window.showIncidentDetailsFallback = function(incident) {
+            const priority = incident.priority_level || 'LOW';
+            const priorityScore = Math.round(incident.final_priority || 0);
+            const hasVideo = incident.video_url && incident.video_url !== '';
+            
+            document.getElementById('modalTitle').innerHTML = `🚨 ${incident.emergency_type} Incident`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Priority Level</div>
+                    <div class="detail-value"><span class="priority-tag priority-${priority}">${priority}</span> (${priorityScore}/100)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${incident.district || 'N/A'}, ${incident.municipality || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${incident.description || 'No description'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(incident.created_at).toLocaleString()}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
+                </div>
+                ${hasVideo ? `
+                <div class="detail-row">
+                    <div class="detail-label">Video Evidence</div>
+                    <div class="detail-value">
+                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
+                            <div class="video-thumb">
+                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover; border-radius:12px;">
+                                <div class="play-icon"><i class="fas fa-play"></i></div>
+                            </div>
+                            <video style="display:none; width:100%; max-height:300px; border-radius:12px;" controls>
+                                <source src="${incident.video_url}" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+        
+        window.closeModal = function() {
+            document.getElementById('incidentModal').style.display = 'none';
+        };
+        
+        document.getElementById('emergencyForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedLat || !selectedLng) {
+                alert('Please click on the map to select location first!');
+                return;
+            }
+            
+            const q1 = parseInt(document.querySelector('input[name="q1"]:checked')?.value || 0);
+            const q2 = parseInt(document.querySelector('input[name="q2"]:checked')?.value || 0);
+            const q3 = parseInt(document.querySelector('input[name="q3"]:checked')?.value || 0);
+            
+            let videoUrl = null;
+            const videoFile = document.getElementById('videoUpload').files[0];
+            if (videoFile) {
+                if (videoFile.size > 50 * 1024 * 1024) {
+                    alert('Video too large! Maximum 50MB.');
+                    return;
+                }
+                const fileName = `${currentUser.user_id}_${Date.now()}.mp4`;
+                const { error: uploadError } = await supabase.storage
+                    .from('emergency-videos')
+                    .upload(fileName, videoFile);
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('emergency-videos').getPublicUrl(fileName);
+                    videoUrl = urlData.publicUrl;
+                }
+            }
+            
+            const clientTimestamp = new Date().toISOString();
+            
+            const incidentData = {
+                requestor_id: currentUser.user_id,
+                emergency_type: document.getElementById('incidentType').value,
+                q1: q1,
+                q2: q2,
+                q3: q3,
+                description: document.getElementById('details').value,
+                province: document.getElementById('province').value || 'Bagmati Province',
+                district: document.getElementById('district').value || 'Kathmandu',
+                municipality: document.getElementById('municipality').value || 'Kathmandu Metro',
+                ward: parseInt(document.getElementById('ward').value) || 1,
+                tole: document.getElementById('tole').value || 'Unknown',
+                latitude: selectedLat,
+                longitude: selectedLng,
+                video_url: videoUrl,
+                created_at: clientTimestamp,
+                status: 'pending'
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/incidents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(incidentData)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert(`✅ Emergency reported! Priority: ${result.ranking?.priority || 'Calculating...'}`);
+                } else {
+                    throw new Error('API failed');
+                }
+            } catch (error) {
+                console.error('API error, using fallback:', error);
+                const { error: insertError } = await supabase
+                    .from('emergency_requests')
+                    .insert({
+                        requestor_id: currentUser.user_id,
+                        emergency_type: incidentData.emergency_type,
+                        q1_threat_to_life: q1,
+                        q2_people_affected: q2,
+                        q3_urgency: q3,
+                        description: incidentData.description,
+                        province: incidentData.province,
+                        district: incidentData.district,
+                        municipality: incidentData.municipality,
+                        ward: incidentData.ward,
+                        tole: incidentData.tole,
+                        latitude: selectedLat,
+                        longitude: selectedLng,
+                        video_url: videoUrl,
+                        created_at: clientTimestamp,
+                        status: 'pending'
+                    });
+                
+                if (insertError) {
+                    alert('Error: ' + insertError.message);
+                    return;
+                }
+                alert('✅ Emergency reported successfully!');
+            }
+            
+            e.target.reset();
+            document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+            document.getElementById('severityPercentage').innerHTML = '0%';
+            document.getElementById('severityStatus').textContent = 'NOT ASSESSED';
+            if (marker) map.removeLayer(marker);
+            document.getElementById('selectedLocationDisplay').style.display = 'none';
+            selectedLat = null;
+            selectedLng = null;
+            
+            await loadAllIncidents();
+            await loadAllIncidentsForSearch();
+        });
+        
+        // ============================================================
+        // FIXED deleteIncident - now verifies deletion actually happened
+        // ============================================================
+        window.deleteIncident = async (id) => {
+            if (!confirm('Are you sure you want to delete your incident?')) return;
+
+            console.log('🗑️ Attempting to delete request_id:', id, '| typeof:', typeof id);
+
+            try {
+                // Try to delete by request_id, and request the deleted rows back
+                const { data, error } = await supabase
+                    .from('emergency_requests')
+                    .delete()
+                    .eq('request_id', id)
+                    .select();
+
+                if (error) {
+                    console.error('❌ Delete error:', error);
+                    alert('Delete failed: ' + error.message);
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    // Nothing was deleted — most likely RLS blocked it, or ID didn't match
+                    console.warn('⚠️ No rows deleted for id:', id);
+                    alert(
+                        '⚠️ Nothing was actually deleted.\n\n' +
+                        'Common causes:\n' +
+                        '• Row Level Security (RLS) is blocking the DELETE on this table\n' +
+                        '• The ID did not match any row\n\n' +
+                        'Open the browser console (F12) for details.'
+                    );
+                    return;
+                }
+
+                console.log('✅ Deleted row(s):', data);
+                alert('✅ Incident deleted successfully');
+                await loadAllIncidents();
+                await loadAllIncidentsForSearch();
+            } catch (err) {
+                console.error('❌ Unexpected delete error:', err);
+                alert('Error: ' + err.message);
+            }
+        };
+        
+        window.logout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+        
+        function getPriorityColor(p) {
+            switch(p) {
+                case 'CRITICAL': return '#dc2626';
+                case 'HIGH': return '#f97316';
+                case 'MEDIUM': return '#eab308';
+                case 'LOW': return '#22c55e';
+                default: return '#64748b';
+            }
+        }
+        
+        checkAuth();
+        setTimeout(() => { if (typeof L !== 'undefined') initMap(); }, 500);
+    </script>
+</body>
+</html>

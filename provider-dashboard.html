@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard | ESRS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
+        
+        .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.8rem; }
+        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #1e3a5f, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-info { display: flex; align-items: center; gap: 20px; }
+        .user-name { font-weight: 700; }
+        .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
+        .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
+        .verify-badge { background: #f59e0b; color: white; padding: 0.2rem 0.5rem; border-radius: 15px; font-size: 0.6rem; margin-left: 8px; }
+        
+        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .provider-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        
+        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
+        
+        .incident-list { max-height: 500px; overflow-y: auto; }
+        .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid; }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .priority-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .priority-CRITICAL { background: #dc2626; color: white; }
+        .priority-HIGH { background: #f97316; color: white; }
+        .priority-MEDIUM { background: #eab308; }
+        .priority-LOW { background: #22c55e; color: white; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-assigned { background: #dbeafe; color: #2563eb; }
+        .status-completed { background: #d1fae5; color: #059669; }
+        
+        .btn-accept { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-top: 0.5rem; }
+        .btn-status { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; margin-right: 0.5rem; }
+        .btn-secondary { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; margin-top: 1rem; }
+        .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; }
+        .stat-number { font-size: 1.5rem; font-weight: 800; color: #dc2626; }
+        .stat-label { font-size: 0.7rem; color: #64748b; }
+        
+        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; }
+        
+        @media (max-width: 900px) { .provider-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo"><span class="logo-icon">🚒</span><span class="logo-text">Provider Dashboard</span></div>
+        <div class="user-info">
+            <div><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">Provider</div><span id="verifyBadge" class="verify-badge"></span></div>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="provider-layout">
+            <div class="card">
+                <h3>📊 Priority Queue <span style="font-size:0.7rem">(Weighted Ranking)</span></h3>
+                <div id="priorityQueueList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+            </div>
+
+            <div class="card">
+                <h3>✅ My Assigned Incidents</h3>
+                <div id="assignedIncidentsList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">No assigned incidents</div></div>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number" id="totalServices">0</div><div class="stat-label">Total Services</div></div>
+                    <div class="stat-card"><div class="stat-number" id="providerRating">0</div><div class="stat-label">Rating</div></div>
+                    <div class="stat-card"><div class="stat-number" id="availabilityStatus">●</div><div class="stat-label">Available</div></div>
+                </div>
+                <button onclick="toggleAvailability()" class="btn-secondary" style="width:100%; margin-top:0.5rem">Toggle Availability</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:1.5rem">
+            <h3>🔍 Search Incidents by Location</h3>
+            <div class="search-bar"><input type="text" id="locationSearch" placeholder="Enter district or municipality..."><button onclick="searchByLocation()" class="btn-secondary">Search</button></div>
+            <div id="locationSearchResults" class="incident-list"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+        let providerData = null;
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            const { data: userData } = await supabase.from('users').select('*').eq('user_id', session.user.id).single();
+            currentUser = userData;
+            if (currentUser.role !== 'provider') {
+                if (currentUser.role === 'admin') window.location.href = 'admin-dashboard.html';
+                else window.location.href = 'requester-dashboard.html';
+            }
+            const { data: provData } = await supabase.from('providers').select('*').eq('provider_id', currentUser.user_id).single();
+            providerData = provData;
+            document.getElementById('userName').textContent = currentUser.full_name;
+            document.getElementById('userRole').textContent = 'Provider';
+            if (providerData?.verified_by_admin) document.getElementById('verifyBadge').textContent = '✓ Verified';
+            else document.getElementById('verifyBadge').textContent = '⏳ Pending Approval';
+            
+            await loadPriorityQueue();
+            await loadAssignedIncidents();
+            await loadProviderStats();
+        }
+
+        async function loadPriorityQueue() {
+            const { data, error } = await supabase.from('emergency_requests').select('*').eq('status', 'pending').order('final_priority', { ascending: false });
+            const container = document.getElementById('priorityQueueList');
+            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No pending incidents</div>'; return; }
+            if (!providerData?.verified_by_admin) { container.innerHTML = '<div class="empty-state">⚠️ Waiting for admin approval to accept requests</div>'; return; }
+            
+            container.innerHTML = data.map(incident => `
+                <div class="incident-card" style="border-left-color: ${getPriorityColor(incident.priority_level)}">
+                    <div class="incident-header"><strong>🚨 ${incident.emergency_type}</strong><span class="priority-badge priority-${incident.priority_level || 'MEDIUM'}">${incident.priority_level || 'MEDIUM'}</span></div>
+                    <div>📍 ${incident.district}, ${incident.municipality}, Ward ${incident.ward}</div>
+                    <div>📝 ${incident.description?.substring(0, 80)}</div>
+                    <div>Score: ${incident.final_priority?.toFixed(1) || 0}/100</div>
+                    <button onclick="acceptIncident(${incident.request_id})" class="btn-accept">✅ Accept Request</button>
+                </div>
+            `).join('');
+        }
+
+        async function loadAssignedIncidents() {
+            const { data, error } = await supabase.from('emergency_requests').select('*').eq('assigned_provider_id', currentUser.user_id).not('status', 'eq', 'completed');
+            const container = document.getElementById('assignedIncidentsList');
+            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No assigned incidents</div>'; return; }
+            
+            container.innerHTML = data.map(incident => `
+                <div class="incident-card">
+                    <div class="incident-header"><strong>${incident.emergency_type}</strong><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'ASSIGNED'}</span></div>
+                    <div>📍 ${incident.district}, ${incident.municipality}</div>
+                    <div class="button-group" style="margin-top:8px">
+                        <button onclick="updateStatus(${incident.request_id}, 'en_route')" class="btn-status">🚗 En Route</button>
+                        <button onclick="updateStatus(${incident.request_id}, 'on_scene')" class="btn-status">📍 On Scene</button>
+                        <button onclick="updateStatus(${incident.request_id}, 'completed')" class="btn-status" style="background:#10b981">✅ Complete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadProviderStats() {
+            const { data } = await supabase.from('providers').select('total_services, rating, is_available').eq('provider_id', currentUser.user_id).single();
+            if (data) {
+                document.getElementById('totalServices').textContent = data.total_services || 0;
+                document.getElementById('providerRating').textContent = data.rating?.toFixed(1) || '0';
+                document.getElementById('availabilityStatus').textContent = data.is_available ? '● Available' : '○ Unavailable';
+            }
+        }
+
+        window.acceptIncident = async (id) => {
+            if (!providerData?.verified_by_admin) { alert('Your account is pending admin approval'); return; }
+            const { error } = await supabase.from('emergency_requests').update({ status: 'assigned', assigned_provider_id: currentUser.user_id, assigned_at: new Date() }).eq('request_id', id);
+            if (error) alert('Error: ' + error.message);
+            else { alert('Incident accepted!'); await loadPriorityQueue(); await loadAssignedIncidents(); await loadProviderStats(); }
+        };
+
+        window.updateStatus = async (id, status) => {
+            const { error } = await supabase.from('emergency_requests').update({ status }).eq('request_id', id);
+            if (error) alert('Error: ' + error.message);
+            else { alert(`Status: ${status}`); await loadAssignedIncidents(); if (status === 'completed') await loadProviderStats(); }
+        };
+
+        window.searchByLocation = async () => {
+            const query = document.getElementById('locationSearch').value;
+            if (!query) return;
+            const { data } = await supabase.from('emergency_requests').select('*').ilike('district', `%${query}%`).or(`municipality.ilike.%${query}%`);
+            const container = document.getElementById('locationSearchResults');
+            if (!data || data.length === 0) container.innerHTML = '<div class="empty-state">No incidents found</div>';
+            else container.innerHTML = data.map(i => `<div class="incident-card"><strong>${i.emergency_type}</strong> at ${i.district}, ${i.municipality}<br>Status: ${i.status}</div>`).join('');
+        };
+
+        window.toggleAvailability = async () => {
+            const { data } = await supabase.from('providers').select('is_available').eq('provider_id', currentUser.user_id).single();
+            await supabase.from('providers').update({ is_available: !data?.is_available }).eq('provider_id', currentUser.user_id);
+            await loadProviderStats();
+        };
+
+        window.logout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
+        function getPriorityColor(p) { switch(p) { case 'CRITICAL': return '#dc2626'; case 'HIGH': return '#f97316'; case 'MEDIUM': return '#eab308'; default: return '#22c55e'; } }
+        
+        checkAuth();
+    </script>
+</body>
+</html>
