@@ -7,6 +7,59 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="landing.css">
+    <style>
+        /* ================= Strict Form Validation Styles ================= */
+        .field { margin-bottom: 0; }
+
+        .error-msg {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            color: #ff5b5b;
+            font-size: 0.76rem;
+            font-weight: 500;
+            line-height: 1.3;
+            margin: -8px 4px 12px 4px;
+            text-align: left;
+        }
+        .error-msg.show { display: flex; }
+        .error-msg::before {
+            content: "\f06a";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .input-group.invalid {
+            border: 1px solid #ff5b5b !important;
+            box-shadow: 0 0 0 3px rgba(255, 91, 91, 0.15) !important;
+        }
+        .input-group.valid {
+            border: 1px solid #2ecc71 !important;
+        }
+        .input-group.shake { animation: esrs-shake 0.35s ease; }
+
+        @keyframes esrs-shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .form-alert {
+            display: none;
+            background: rgba(255, 91, 91, 0.12);
+            border: 1px solid rgba(255, 91, 91, 0.45);
+            color: #ff8a8a;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .form-alert.show { display: block; }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -173,18 +226,28 @@
                 <button class="tab-btn active" onclick="switchTab('login')">Login</button>
                 <button class="tab-btn" onclick="switchTab('register')">Register</button>
             </div>
-            
+
             <!-- Login Form -->
             <div id="loginTab" class="tab-content active">
-                <form id="loginForm">
-                    <div class="input-group">
-                        <i class="fas fa-envelope"></i>
-                        <input type="email" id="loginEmail" placeholder="Email address" required>
+                <form id="loginForm" novalidate>
+                    <div class="form-alert" id="loginAlert"></div>
+
+                    <div class="field">
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="loginEmail" placeholder="Email address" autocomplete="email" maxlength="100">
+                        </div>
+                        <small class="error-msg" id="err-loginEmail"></small>
                     </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="loginPassword" placeholder="Password" required>
+
+                    <div class="field">
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password" maxlength="64">
+                        </div>
+                        <small class="error-msg" id="err-loginPassword"></small>
                     </div>
+
                     <button type="submit" class="modal-btn">
                         <i class="fas fa-sign-in-alt"></i> Login to Dashboard
                     </button>
@@ -196,52 +259,86 @@
                     admin@esrs.com / password123
                 </p>
             </div>
-            
+
             <!-- Register Form -->
             <div id="registerTab" class="tab-content">
-                <form id="registerForm">
-                    <div class="input-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="regName" placeholder="Full Name" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-envelope"></i>
-                        <input type="email" id="regEmail" placeholder="Email address" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-phone"></i>
-                        <input type="tel" id="regPhone" placeholder="Phone Number (98XXXXXXXX)" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-user-tag"></i>
-                        <select id="regRole">
-                            <option value="requester">Citizen</option>
-                            <option value="provider">Responder</option>
-                        </select>
-                    </div>
-                    <div id="responderFields" style="display:none">
+                <form id="registerForm" novalidate>
+                    <div class="form-alert" id="registerAlert"></div>
+
+                    <div class="field">
                         <div class="input-group">
-                            <i class="fas fa-building"></i>
-                            <input type="text" id="regOrganization" placeholder="Organization Name">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="regName" placeholder="Full Name" autocomplete="name" maxlength="60">
                         </div>
+                        <small class="error-msg" id="err-regName"></small>
+                    </div>
+
+                    <div class="field">
                         <div class="input-group">
-                            <i class="fas fa-tag"></i>
-                            <select id="regResponderType">
-                                <option value="Medical">Medical/Ambulance</option>
-                                <option value="Fire">Fire Department</option>
-                                <option value="Police">Police</option>
-                                <option value="Disaster">Disaster Response</option>
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="regEmail" placeholder="Email address" autocomplete="email" maxlength="100">
+                        </div>
+                        <small class="error-msg" id="err-regEmail"></small>
+                    </div>
+
+                    <div class="field">
+                        <div class="input-group">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="regPhone" placeholder="Phone Number (98XXXXXXXX)"
+                                   inputmode="numeric" autocomplete="tel" maxlength="10">
+                        </div>
+                        <small class="error-msg" id="err-regPhone"></small>
+                    </div>
+
+                    <div class="field">
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="regPassword" placeholder="Password (min 6 characters)"
+                                   autocomplete="new-password" maxlength="64">
+                        </div>
+                        <small class="error-msg" id="err-regPassword"></small>
+                    </div>
+
+                    <div class="field">
+                        <div class="input-group">
+                            <i class="fas fa-user-tag"></i>
+                            <select id="regRole">
+                                <option value="requester">Citizen</option>
+                                <option value="provider">Responder</option>
                             </select>
                         </div>
-                        <div class="input-group">
-                            <i class="fas fa-id-card"></i>
-                            <input type="text" id="regLicense" placeholder="License Number">
+                    </div>
+
+                    <div id="responderFields" style="display:none">
+                        <div class="field">
+                            <div class="input-group">
+                                <i class="fas fa-building"></i>
+                                <input type="text" id="regOrganization" placeholder="Organization Name" maxlength="80">
+                            </div>
+                            <small class="error-msg" id="err-regOrganization"></small>
+                        </div>
+
+                        <div class="field">
+                            <div class="input-group">
+                                <i class="fas fa-tag"></i>
+                                <select id="regResponderType">
+                                    <option value="Medical">Medical/Ambulance</option>
+                                    <option value="Fire">Fire Department</option>
+                                    <option value="Police">Police</option>
+                                    <option value="Disaster">Disaster Response</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="input-group">
+                                <i class="fas fa-id-card"></i>
+                                <input type="text" id="regLicense" placeholder="License Number" maxlength="30">
+                            </div>
+                            <small class="error-msg" id="err-regLicense"></small>
                         </div>
                     </div>
+
                     <button type="submit" class="modal-btn">
                         <i class="fas fa-user-plus"></i> Create Account
                     </button>
@@ -286,19 +383,24 @@
     </footer>
 
     <script>
-        // Supabase configuration
+        /* ==================================================================
+           SUPABASE CONFIG
+           ================================================================== */
         const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
 
         let supabaseClient = null;
 
-        // Initialize Supabase
         async function initSupabase() {
+            if (supabaseClient) return supabaseClient;
             const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
             supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            return supabaseClient;
         }
 
-        // Mobile menu toggle
+        /* ==================================================================
+           UI HELPERS
+           ================================================================== */
         function toggleMobileMenu() {
             document.querySelector('.nav-links').classList.toggle('active');
         }
@@ -327,7 +429,7 @@
             const loginTab = document.getElementById('loginTab');
             const registerTab = document.getElementById('registerTab');
             const tabs = document.querySelectorAll('.tab-btn');
-            
+
             if (tab === 'login') {
                 loginTab.classList.add('active');
                 registerTab.classList.remove('active');
@@ -341,94 +443,483 @@
             }
         }
 
-        // Show/hide responder fields
-        const roleSelect = document.getElementById('regRole');
-        if (roleSelect) {
-            roleSelect.addEventListener('change', function() {
-                const responderFields = document.getElementById('responderFields');
-                responderFields.style.display = this.value === 'provider' ? 'block' : 'none';
+        window.onclick = function (event) {
+            const modal = document.getElementById('authModal');
+            if (event.target === modal) closeAuthModal();
+        };
+
+        /* ==================================================================
+           VALIDATION PATTERNS / BLACKLISTS
+           ================================================================== */
+
+        // Name: English letters + Devanagari letters, spaces, apostrophe, hyphen, period
+        const NAME_REGEX = /^[A-Za-z\u0900-\u097F][A-Za-z\u0900-\u097F\s.'-]*$/;
+
+        // Standard email structure
+        const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,10}$/;
+
+        // Nepali mobile: exactly 10 digits starting with 98, 97 or 96
+        const NP_MOBILE_REGEX = /^(98|97|96)\d{8}$/;
+
+        // Local-part blacklist (before the "@"). Catches placeholders like abc, 123, test, xyz.
+        const EMAIL_LOCAL_BLACKLIST = new Set([
+            // Sequence / keyboard mash
+            'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg',
+            'xyz', 'xyzabc', 'asdf', 'asdfg', 'asdfgh', 'asdfghj',
+            'qwerty', 'qwertyuiop', 'qwe', 'qwer', 'zxcv', 'zxcvb',
+            // Pure repeats
+            'aa', 'aaa', 'aaaa', 'aaaaa',
+            'bb', 'bbb', 'bbbb',
+            'cc', 'ccc', 'cccc',
+            'xx', 'xxx', 'xxxx',
+            'yy', 'yyy', 'yyyy',
+            'zz', 'zzz', 'zzzz',
+            // Digits / placeholders
+            '1', '12', '123', '1234', '12345', '123456', '1234567', '12345678', '123456789',
+            '0', '00', '000', '0000', '00000',
+            '111', '1111', '11111', '222', '333', '444', '555', '666', '777', '888', '999',
+            // Generic test words
+            'test', 'test1', 'test2', 'testing', 'tester', 'tests',
+            'dummy', 'fake', 'sample', 'example', 'temp', 'temporary',
+            'na', 'nil', 'none', 'null', 'no', 'yes',
+            'user', 'user1', 'user12', 'user123', 'username', 'name',
+            'hello', 'hi', 'hey', 'blah', 'foobar', 'foo', 'bar',
+            'lorem', 'ipsum', 'mail', 'email', 'contact', 'info'
+        ]);
+
+        // Domain blacklist — throwaway / placeholder providers
+        const EMAIL_DOMAIN_BLACKLIST = new Set([
+            'example.com', 'example.org', 'example.net',
+            'test.com', 'test.test', 'test.org', 'test.net',
+            'abc.com', 'aaa.com', 'xyz.com',
+            'dummy.com', 'fake.com', 'temp.com', 'temporary.com',
+            'mailinator.com', 'tempmail.com', 'temp-mail.org',
+            '10minutemail.com', 'guerrillamail.com', 'yopmail.com',
+            'trashmail.com', 'sharklasers.com', 'getnada.com',
+            'dispostable.com', 'maildrop.cc', 'throwawaymail.com'
+        ]);
+
+        /* ==================================================================
+           FIELD VALIDATORS
+           ================================================================== */
+
+        function validateName(value, label = 'Full name') {
+            const v = value.trim().replace(/\s+/g, ' ');
+            if (!v) return `${label} is required`;
+            if (/\d/.test(v)) return `${label} cannot contain numbers`;
+            if (!NAME_REGEX.test(v)) return `${label} can only contain letters, spaces, apostrophes and hyphens`;
+            const lettersOnly = v.replace(/[^A-Za-z\u0900-\u097F]/g, '');
+            if (lettersOnly.length < 2) return `${label} must contain at least 2 letters`;
+            if (v.length > 60) return `${label} is too long (max 60 characters)`;
+            return '';
+        }
+
+        /**
+         * Strict email validator.
+         * Rejects:
+         *  - Placeholder local parts ("abc", "123", "test", "xyz", "aaa", etc.)
+         *  - Local parts that are only digits or symbols
+         *  - Local parts with fewer than 2 letters
+         *  - Excessive repeated characters ("aaa", "111")
+         *  - Blacklisted throwaway domains
+         */
+        function validateEmail(value) {
+            const v = value.trim();
+
+            if (!v) return 'Email address is required';
+            if (v.length > 100) return 'Email address is too long (max 100 characters)';
+            if (/\s/.test(v)) return 'Email address cannot contain spaces';
+
+            const parts = v.split('@');
+            if (parts.length !== 2) return 'Email must contain exactly one "@" symbol';
+
+            const local = parts[0];
+            const domain = parts[1].toLowerCase();
+
+            if (!local) return 'Email is missing the part before "@"';
+            if (!domain) return 'Email is missing the domain after "@"';
+
+            // --- Local part checks ---
+            if (local.length < 3) return 'The part before "@" must be at least 3 characters';
+            if (local.length > 64) return 'The part before "@" is too long';
+            if (!/^[A-Za-z0-9._%+-]+$/.test(local)) {
+                return 'The part before "@" contains invalid characters';
+            }
+
+            const letterCount = (local.match(/[A-Za-z]/g) || []).length;
+            if (letterCount < 2) {
+                return 'Email must contain at least 2 letters before "@" (e.g. john, sita)';
+            }
+            if (/^[0-9._%+-]+$/.test(local)) {
+                return 'Email cannot be only numbers or symbols before "@"';
+            }
+
+            // Repeated characters: aaa, 111, ...
+            if (/(.)\1{2,}/.test(local)) {
+                return 'Email looks invalid (too many repeated characters)';
+            }
+
+            // Blacklist exact match
+            const lowerLocal = local.toLowerCase();
+            if (EMAIL_LOCAL_BLACKLIST.has(lowerLocal)) {
+                return 'Please use a real email address — placeholders like "abc" or "123" are not allowed';
+            }
+
+            // Blacklist after stripping digits/symbols: "abc123" -> "abc" -> rejected
+            const lettersOnlyLocal = lowerLocal.replace(/[^a-z]/g, '');
+            if (lettersOnlyLocal.length >= 2 && EMAIL_LOCAL_BLACKLIST.has(lettersOnlyLocal)) {
+                return 'Please use a real email address — placeholders like "abc" or "123" are not allowed';
+            }
+
+            // --- Domain checks ---
+            if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
+                return 'Enter a valid domain (e.g. gmail.com)';
+            }
+            if (!/^[A-Za-z0-9.-]+\.[A-Za-z]{2,10}$/.test(domain)) {
+                return 'Enter a valid domain (e.g. gmail.com)';
+            }
+            if (EMAIL_DOMAIN_BLACKLIST.has(domain)) {
+                return 'This email domain is not allowed. Please use a real email provider';
+            }
+
+            // Final full-structure check
+            if (!EMAIL_REGEX.test(v)) {
+                return 'Enter a valid email address (e.g. name@gmail.com)';
+            }
+
+            return '';
+        }
+
+        function validatePhone(value) {
+            const v = value.trim().replace(/[\s-]/g, '');
+            if (!v) return 'Phone number is required';
+            if (!/^\d+$/.test(v)) return 'Phone number must contain digits only';
+            if (v.length !== 10) return `Phone number must be exactly 10 digits (you entered ${v.length})`;
+            if (!NP_MOBILE_REGEX.test(v)) return 'Enter a valid Nepali mobile number starting with 98, 97 or 96';
+            return '';
+        }
+
+        function validateNewPassword(value) {
+            if (!value) return 'Password is required';
+            if (value.length < 6) return 'Password must be at least 6 characters';
+            if (value.length > 64) return 'Password must be less than 64 characters';
+            if (!/[A-Za-z]/.test(value)) return 'Password must contain at least one letter';
+            if (!/\d/.test(value)) return 'Password must contain at least one number';
+            if (/\s/.test(value)) return 'Password cannot contain spaces';
+            return '';
+        }
+
+        function validateLoginPassword(value) {
+            if (!value) return 'Password is required';
+            return '';
+        }
+
+        function validateOrganization(value) {
+            const v = value.trim();
+            if (!v) return 'Organization name is required';
+            if (v.length < 2) return 'Organization name is too short';
+            if (v.length > 80) return 'Organization name is too long';
+            if (!/^[A-Za-z0-9\u0900-\u097F][A-Za-z0-9\u0900-\u097F\s.,&'()/-]*$/.test(v)) {
+                return 'Organization name contains invalid characters';
+            }
+            return '';
+        }
+
+        function validateLicense(value) {
+            const v = value.trim();
+            if (!v) return 'License number is required';
+            if (v.length < 3) return 'License number must be at least 3 characters';
+            if (v.length > 30) return 'License number is too long';
+            if (!/^[A-Za-z0-9\-\/]+$/.test(v)) return 'License number can only contain letters, numbers, "-" and "/"';
+            return '';
+        }
+
+        /* ==================================================================
+           UI STATE + VALIDATION DISPATCH
+           ================================================================== */
+
+        function isProviderSelected() {
+            const el = document.getElementById('regRole');
+            return !!el && el.value === 'provider';
+        }
+
+        function showAlert(id, message) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = message;
+            el.classList.add('show');
+        }
+
+        function hideAlert(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = '';
+            el.classList.remove('show');
+        }
+
+        function setFieldState(el, message, shake = false) {
+            if (!el) return true;
+
+            const group = el.closest('.input-group');
+            const errEl = document.getElementById('err-' + el.id);
+
+            if (message) {
+                if (group) {
+                    group.classList.add('invalid');
+                    group.classList.remove('valid');
+                    if (shake) {
+                        group.classList.remove('shake');
+                        void group.offsetWidth; // restart animation
+                        group.classList.add('shake');
+                    }
+                }
+                if (errEl) {
+                    errEl.textContent = message;
+                    errEl.classList.add('show');
+                }
+                return false;
+            }
+
+            if (group) {
+                group.classList.remove('invalid');
+                group.classList.toggle('valid', el.value.trim() !== '');
+            }
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.classList.remove('show');
+            }
+            return true;
+        }
+
+        function validateField(id, shake = false) {
+            const el = document.getElementById(id);
+            if (!el) return true;
+
+            let message = '';
+
+            switch (id) {
+                case 'loginEmail':
+                    message = validateEmail(el.value);
+                    break;
+                case 'loginPassword':
+                    message = validateLoginPassword(el.value);
+                    break;
+                case 'regName':
+                    message = validateName(el.value);
+                    break;
+                case 'regEmail':
+                    message = validateEmail(el.value);
+                    break;
+                case 'regPhone':
+                    message = validatePhone(el.value);
+                    break;
+                case 'regPassword':
+                    message = validateNewPassword(el.value);
+                    break;
+                case 'regOrganization':
+                    message = isProviderSelected() ? validateOrganization(el.value) : '';
+                    break;
+                case 'regLicense':
+                    message = isProviderSelected() ? validateLicense(el.value) : '';
+                    break;
+                default:
+                    message = '';
+            }
+
+            return setFieldState(el, message, shake);
+        }
+
+        function validateFields(ids) {
+            let firstInvalid = null;
+
+            ids.forEach(id => {
+                const ok = validateField(id, true);
+                if (!ok && !firstInvalid) firstInvalid = document.getElementById(id);
+            });
+
+            if (firstInvalid) {
+                firstInvalid.focus({ preventScroll: true });
+                const group = firstInvalid.closest('.input-group');
+                if (group && group.scrollIntoView) {
+                    group.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /* ==================================================================
+           INPUT RESTRICTIONS
+           ================================================================== */
+
+        // Phone: digits only, max 10
+        const phoneInput = document.getElementById('regPhone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function () {
+                this.value = this.value.replace(/\D/g, '').slice(0, 10);
+            });
+            phoneInput.addEventListener('keypress', function (e) {
+                if (!/[0-9]/.test(e.key)) e.preventDefault();
+            });
+            phoneInput.addEventListener('paste', function (e) {
+                const pasted = (e.clipboardData || window.clipboardData).getData('text');
+                if (/\D/.test(pasted)) {
+                    e.preventDefault();
+                    this.value = pasted.replace(/\D/g, '').slice(0, 10);
+                }
             });
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('authModal');
-            if (event.target === modal) closeAuthModal();
+        // Name: block digits while typing
+        const nameInput = document.getElementById('regName');
+        if (nameInput) {
+            nameInput.addEventListener('keypress', function (e) {
+                if (/[0-9]/.test(e.key)) e.preventDefault();
+            });
         }
 
-        // ============ LOGIN FUNCTION ============
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        /* ==================================================================
+           LIVE VALIDATION WIRING
+           ================================================================== */
+        const LIVE_FIELDS = [
+            'loginEmail', 'loginPassword',
+            'regName', 'regEmail', 'regPhone', 'regPassword',
+            'regOrganization', 'regLicense'
+        ];
+
+        LIVE_FIELDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // Validate on blur
+            el.addEventListener('blur', () => validateField(id));
+
+            // Re-validate live only after the field has already shown an error
+            el.addEventListener('input', () => {
+                const group = el.closest('.input-group');
+                if (group && group.classList.contains('invalid')) validateField(id);
+            });
+        });
+
+        /* ==================================================================
+           ROLE SELECT — show/hide responder fields
+           ================================================================== */
+        const roleSelect = document.getElementById('regRole');
+        if (roleSelect) {
+            roleSelect.addEventListener('change', function () {
+                const responderFields = document.getElementById('responderFields');
+                const show = this.value === 'provider';
+                responderFields.style.display = show ? 'block' : 'none';
+
+                if (!show) {
+                    ['regOrganization', 'regLicense'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.value = '';
+                            setFieldState(el, '');
+                        }
+                    });
+                }
+            });
+        }
+
+        /* ==================================================================
+           LOGIN SUBMIT
+           ================================================================== */
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
+            hideAlert('loginAlert');
+
+            // Strict validation
+            if (!validateFields(['loginEmail', 'loginPassword'])) {
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
-            
-            const submitBtn = e.target.querySelector('button');
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
             submitBtn.disabled = true;
-            
+
             try {
-                if (!supabaseClient) await initSupabase();
-                
+                await initSupabase();
+
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
-                
+
                 if (error) {
-                    alert('Login Failed: ' + error.message);
+                    showAlert('loginAlert', 'Login failed: ' + error.message);
+                    setFieldState(document.getElementById('loginPassword'), 'Incorrect email or password', true);
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
-                } else {
-                    // Get user role from database
-                    const { data: userData, error: userError } = await supabaseClient
-                        .from('users')
-                        .select('role')
-                        .eq('user_id', data.user.id)
-                        .single();
-                    
-                    if (userError) {
-                        console.error('Error fetching user role:', userError);
-                        alert('Login successful! Redirecting to Requester Dashboard...');
-                        window.location.href = 'requester-dashboard.html';
-                    } else {
-                        const role = userData.role;
-                        alert('Login successful! Redirecting to ' + role.toUpperCase() + ' dashboard...');
-                        
-                        if (role === 'admin') {
-                            window.location.href = 'admin-dashboard.html';
-                        } else if (role === 'provider') {
-                            window.location.href = 'provider-dashboard.html';
-                        } else {
-                            window.location.href = 'requester-dashboard.html';
-                        }
-                    }
+                    return;
                 }
+
+                // Fetch user role
+                const { data: userData, error: userError } = await supabaseClient
+                    .from('users')
+                    .select('role')
+                    .eq('user_id', data.user.id)
+                    .single();
+
+                if (userError) {
+                    console.error('Error fetching user role:', userError);
+                    window.location.href = 'requester-dashboard.html';
+                    return;
+                }
+
+                const role = (userData.role || 'requester').toLowerCase();
+
+                if (role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                } else if (role === 'provider') {
+                    window.location.href = 'provider-dashboard.html';
+                } else {
+                    window.location.href = 'requester-dashboard.html';
+                }
+
             } catch (err) {
-                alert('Error: ' + err.message);
+                showAlert('loginAlert', 'Error: ' + err.message);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
 
-        // ============ REGISTER FUNCTION ============
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        /* ==================================================================
+           REGISTER SUBMIT
+           ================================================================== */
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
-            const email = document.getElementById('regEmail').value;
+            hideAlert('registerAlert');
+
+            // Strict validation
+            const fieldsToValidate = ['regName', 'regEmail', 'regPhone', 'regPassword'];
+            if (isProviderSelected()) {
+                fieldsToValidate.push('regOrganization', 'regLicense');
+            }
+
+            if (!validateFields(fieldsToValidate)) {
+                return;
+            }
+
+            const fullName = document.getElementById('regName').value.trim().replace(/\s+/g, ' ');
+            const email = document.getElementById('regEmail').value.trim().toLowerCase();
+            const phone = document.getElementById('regPhone').value.trim();
             const password = document.getElementById('regPassword').value;
-            const fullName = document.getElementById('regName').value;
-            const phone = document.getElementById('regPhone').value;
             const role = document.getElementById('regRole').value;
-            
-            const submitBtn = e.target.querySelector('button');
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
             submitBtn.disabled = true;
-            
+
             try {
-                if (!supabaseClient) await initSupabase();
-                
+                await initSupabase();
+
                 const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
@@ -440,14 +931,14 @@
                         }
                     }
                 });
-                
+
                 if (signUpError) {
-                    alert('Registration Failed: ' + signUpError.message);
+                    showAlert('registerAlert', 'Registration failed: ' + signUpError.message);
                     submitBtn.innerHTML = originalText;
                     submitBtn.disabled = false;
                     return;
                 }
-                
+
                 const { error: userError } = await supabaseClient
                     .from('users')
                     .insert({
@@ -458,16 +949,16 @@
                         role: role,
                         is_verified: true
                     });
-                
+
                 if (userError) {
                     console.error('Error adding to users table:', userError);
                 }
-                
+
                 if (role === 'provider') {
-                    const orgName = document.getElementById('regOrganization').value;
+                    const orgName = document.getElementById('regOrganization').value.trim();
                     const providerType = document.getElementById('regResponderType').value;
-                    const license = document.getElementById('regLicense').value;
-                    
+                    const license = document.getElementById('regLicense').value.trim();
+
                     const { error: providerError } = await supabaseClient
                         .from('providers')
                         .insert({
@@ -477,33 +968,49 @@
                             license_number: license,
                             verified_by_admin: false
                         });
-                    
+
                     if (providerError) console.error('Error adding to providers:', providerError);
                 }
-                
-                alert('Registration successful! Please login.');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+
+                // Reset form + go back to login
+                document.getElementById('registerForm').reset();
+                document.getElementById('responderFields').style.display = 'none';
+                document.querySelectorAll('#registerForm .input-group').forEach(g => {
+                    g.classList.remove('valid', 'invalid');
+                });
+                document.querySelectorAll('#registerForm .error-msg').forEach(el => {
+                    el.textContent = '';
+                    el.classList.remove('show');
+                });
+
                 switchTab('login');
                 document.getElementById('loginEmail').value = email;
-                
+                showAlert('loginAlert', 'Registration successful! Please log in with your new account.');
+
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+
             } catch (err) {
-                alert('Error: ' + err.message);
+                showAlert('registerAlert', 'Error: ' + err.message);
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         });
 
-        // Smooth scroll
+        /* ==================================================================
+           SMOOTH SCROLL
+           ================================================================== */
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
+            anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) target.scrollIntoView({ behavior: 'smooth' });
             });
         });
 
-        // Initialize Supabase on page load
+        /* ==================================================================
+           INIT
+           ================================================================== */
         initSupabase();
     </script>
 </body>
