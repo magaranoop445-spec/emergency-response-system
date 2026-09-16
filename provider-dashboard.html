@@ -4,159 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Provider Dashboard | ESRS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
-
-        .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-icon { font-size: 1.8rem; }
-        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #1e3a5f, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-info { display: flex; align-items: center; gap: 20px; }
-        .user-name { font-weight: 700; }
-        .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
-        .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
-        .verify-badge { background: #f59e0b; color: white; padding: 0.2rem 0.5rem; border-radius: 15px; font-size: 0.6rem; margin-left: 8px; }
-        .verify-badge.verified { background: #10b981; }
-
-        /* ⭐ Avatar */
-        .avatar-wrap { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626; display: block; background: #f1f5f9; }
-        .avatar-empty { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.1rem; background: #f8fafc; transition: all 0.2s; }
-        .avatar-wrap:hover .avatar-empty { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
-        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
-        .avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-
-        .availability-pill { display: inline-flex; align-items: center; gap: 6px; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; transition: all 0.2s ease; }
-        .availability-pill.available { background: #d1fae5; color: #059669; }
-        .availability-pill.unavailable { background: #fee2e2; color: #dc2626; }
-        .availability-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
-        .availability-pill.unavailable .dot { animation: none; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-        .provider-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-
-        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
-
-        .incident-list { max-height: 500px; overflow-y: auto; }
-        .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid; transition: all 0.2s; cursor: pointer; }
-        .incident-card:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px; }
-        .priority-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .priority-CRITICAL { background: #dc2626; color: white; }
-        .priority-HIGH { background: #f97316; color: white; }
-        .priority-MEDIUM { background: #eab308; }
-        .priority-LOW { background: #22c55e; color: white; }
-        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; }
-        .status-pending { background: #fef3c7; color: #d97706; }
-        .status-assigned { background: #dbeafe; color: #2563eb; }
-        .status-en_route { background: #e0e7ff; color: #4f46e5; }
-        .status-on_scene { background: #fef3c7; color: #d97706; }
-        .status-completed { background: #d1fae5; color: #059669; }
-
-        .btn-accept { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-top: 0.5rem; }
-        .btn-status { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; margin-right: 0.5rem; transition: all 0.2s ease; }
-        .btn-status:disabled { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; opacity: 0.7; }
-        .btn-secondary { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 0.85rem; }
-
-        .btn-location { background: linear-gradient(135deg, #dc2626, #e11d48); color: white; border: none; padding: 0.7rem 1.3rem; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
-        .btn-location:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35); }
-        .btn-location:disabled { opacity: 0.7; cursor: not-allowed; }
-
-        .btn-availability { width: 100%; margin-top: 0.8rem; padding: 0.7rem 1rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease; }
-        .btn-availability.available { background: #10b981; color: white; }
-        .btn-availability.available:hover { background: #059669; }
-        .btn-availability.unavailable { background: #f1f5f9; color: #dc2626; border-color: #dc2626; }
-        .btn-availability.unavailable:hover { background: #fee2e2; }
-        .btn-availability:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; margin-top: 1rem; }
-        .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; }
-        .stat-number { font-size: 1.5rem; font-weight: 800; color: #dc2626; }
-        .stat-label { font-size: 0.7rem; color: #64748b; }
-
-        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; transition: border-color 0.2s; }
-        .search-bar input:focus { outline: none; border-color: #dc2626; }
-
-        .unavailable-banner { display: none; background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fca5a5; color: #991b1b; padding: 0.9rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 10px; }
-        .unavailable-banner.show { display: flex; }
-        .unavailable-banner i { font-size: 1.2rem; }
-
-        .location-banner { display: none; background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 0.9rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 10px; }
-        .location-banner.show { display: flex; }
-
-        .locked-notice { display: none; background: #fef2f2; border: 1px dashed #fca5a5; color: #991b1b; padding: 0.6rem 0.9rem; border-radius: 10px; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.8rem; align-items: center; gap: 8px; }
-        .locked-notice.show { display: flex; }
-
-        .queue-toolbar { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.7rem; flex-wrap: wrap; }
-        .queue-toolbar label { font-size: 0.78rem; color: #64748b; font-weight: 600; }
-        .queue-toolbar select { padding: 0.4rem 0.7rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: white; color: #1a2c3e; }
-        .queue-toolbar select:focus { outline: none; border-color: #dc2626; }
-        .queue-meta-right { font-size: 0.75rem; color: #64748b; margin-left: auto; }
-
-        .esrs-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: white; padding: 0.9rem 1.2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; z-index: 9999; max-width: 340px; }
-        .esrs-toast.show { opacity: 1; transform: translateY(0); }
-        .esrs-toast.success { background: #059669; }
-        .esrs-toast.error { background: #dc2626; }
-        .esrs-toast.info { background: #2563eb; }
-
-        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
-        .searching-hint { text-align: center; padding: 1rem; color: #94a3b8; font-size: 0.85rem; }
-
-        #providerLocationMap { height: 320px; border-radius: 12px; margin-bottom: 0.8rem; }
-        .location-info { background: #f1f5f9; padding: 0.9rem 1.1rem; border-radius: 12px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .location-info .coords { font-family: 'Courier New', monospace; color: #475569; font-size: 0.8rem; margin-top: 4px; }
-        .location-info .status-set { color: #059669; font-weight: 700; }
-        .location-info .status-unset { color: #dc2626; font-weight: 700; }
-        .location-info .status-loading { color: #f59e0b; font-weight: 700; }
-        .location-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 1rem; }
-        .distance-pill { display: inline-block; background: #dbeafe; color: #1e40af; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: 6px; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 1; }
-        .modal-header h2 { font-size: 1.3rem; color: #1e293b; }
-        .close-modal { font-size: 1.8rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; line-height: 1; }
-        .close-modal:hover { color: #dc2626; }
-        .modal-body { padding: 1.5rem; }
-        .detail-row { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
-        .detail-row:last-child { border-bottom: none; }
-        .detail-label { font-weight: 600; color: #64748b; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.3rem; }
-        .detail-value { font-size: 0.95rem; color: #1e293b; line-height: 1.5; }
-        .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-
-        .media-container { margin-top: 8px; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
-        .media-container img { width: 100%; max-height: 300px; object-fit: contain; display: block; margin: 0 auto; }
-        .media-container video { width: 100%; max-height: 300px; object-fit: contain; background: #000; display: block; }
-
-        /* ⭐ Profile modal */
-        .profile-modal-content { background: white; border-radius: 24px; width: 90%; max-width: 420px; padding: 2rem; text-align: center; animation: slideIn 0.3s ease; }
-        .profile-modal-content h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e293b; }
-        .profile-modal-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 1rem auto; border: 4px solid #dc2626; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
-        .profile-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-modal-avatar .placeholder { font-size: 3rem; color: #94a3b8; }
-        .profile-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
-        .profile-modal-actions button { padding: 0.7rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
-        .btn-upload { background: #dc2626; color: white; }
-        .btn-upload:hover { background: #b91c1c; }
-        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0 !important; }
-
-        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        @media (max-width: 900px) { .provider-layout { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="navbar">
         <div class="logo"><span class="logo-icon">🚒</span><span class="logo-text">Provider Dashboard</span></div>
         <div class="user-info">
-            <!-- ⭐ Avatar -->
             <div class="avatar-wrap" onclick="openProfileModal()" title="Click to update profile picture">
                 <div id="navbarAvatar"></div>
                 <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
@@ -284,7 +142,6 @@
         </div>
     </div>
 
-    <!-- ⭐ Profile Picture Modal -->
     <div id="profileModal" class="modal">
         <div class="profile-modal-content">
             <h2>Your Profile Picture</h2>
@@ -324,7 +181,6 @@
         let pendingLocation = null;
         let manualMapInitialized = false;
 
-        /* ⭐ Profile pic state */
         let profilePicUrl = null;
         let pendingProfileFile = null;
 
@@ -486,7 +342,6 @@
             else { badge.textContent = '⏳ Pending Approval'; }
             applyAvailabilityUI(providerData?.is_available !== false);
             updateLocationInfo();
-            // ⭐ Render avatar
             renderNavbarAvatar(currentUser?.profile_picture || null);
             await Promise.all([loadPriorityQueue(), loadAssignedIncidents(), loadProviderStats()]);
         }

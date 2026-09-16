@@ -4,145 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | ESRS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
-
-        .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-icon { font-size: 1.8rem; }
-        .logo-text { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #1e3a5f, #dc2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-info { display: flex; align-items: center; gap: 20px; }
-        .user-name { font-weight: 700; }
-        .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
-        .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
-
-        /* ⭐ Avatar */
-        .avatar-wrap { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
-        .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626; display: block; background: #f1f5f9; }
-        .avatar-empty { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.1rem; background: #f8fafc; transition: all 0.2s; }
-        .avatar-wrap:hover .avatar-empty { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
-        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
-        .avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
-
-        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-        .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-        .full-width { grid-column: span 2; }
-
-        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
-
-        .provider-list, .user-list, .incident-list { max-height: 400px; overflow-y: auto; }
-        .provider-card, .user-card, .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid #dc2626; transition: all 0.2s; }
-        .incident-card.clickable { cursor: pointer; }
-        .incident-card.clickable:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px; }
-
-        .priority-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .priority-CRITICAL { background: #dc2626; color: white; }
-        .priority-HIGH { background: #f97316; color: white; }
-        .priority-MEDIUM { background: #eab308; }
-        .priority-LOW { background: #22c55e; color: white; }
-        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; background: #e2e8f0; }
-
-        .btn-verify { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
-        .btn-remove { background: #dc2626; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-left: 0.5rem; }
-        .btn-boost { background: #f59e0b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-        .btn-refresh { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
-        .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; text-align: center; }
-        .stat-number { font-size: 1.8rem; font-weight: 800; color: #dc2626; }
-        .stat-label { font-size: 0.7rem; color: #64748b; }
-
-        .boost-select { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
-        textarea { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
-
-        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; transition: border-color 0.2s; }
-        .search-bar input:focus { outline: none; border-color: #dc2626; }
-
-        .hotspot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
-        .hotspot-header .hint { font-size: 0.75rem; color: #64748b; }
-        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
-        .searching-hint { text-align: center; padding: 1rem; color: #94a3b8; font-size: 0.85rem; }
-
-        .video-placeholder {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            padding: 0.6rem;
-            text-align: center;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .video-placeholder:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
-
-        .cluster-card { cursor: pointer; }
-        .cluster-card:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
-        .modal-content.wide { max-width: 850px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 1; }
-        .modal-header h2 { font-size: 1.3rem; color: #1e293b; }
-        .close-modal { font-size: 1.8rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; line-height: 1; }
-        .close-modal:hover { color: #dc2626; }
-        .modal-body { padding: 1.5rem; }
-        .detail-row { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
-        .detail-row:last-child { border-bottom: none; }
-        .detail-label { font-weight: 600; color: #64748b; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.3rem; }
-        .detail-value { font-size: 0.95rem; color: #1e293b; line-height: 1.5; }
-        .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .media-container { margin-top: 8px; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
-        .media-container img { max-width: 100%; max-height: 500px; display: block; margin: 0 auto; }
-        .media-container video { width: 100%; max-height: 500px; object-fit: contain; background: #000; display: block; }
-
-        /* ⭐ Cluster incident items are clickable */
-        .cluster-incident-item {
-            background: #f8fafc;
-            border-radius: 10px;
-            padding: 0.7rem 0.9rem;
-            margin-bottom: 0.5rem;
-            border-left: 3px solid #dc2626;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .cluster-incident-item:hover {
-            background: #e0f2fe;
-            border-left-color: #0284c7;
-            transform: translateX(3px);
-        }
-        .cluster-incident-item .type-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
-        .cluster-incident-item .view-hint { font-size: 0.7rem; color: #0284c7; font-weight: 600; margin-top: 4px; }
-
-        /* ⭐ Profile modal */
-        .profile-modal-content { background: white; border-radius: 24px; width: 90%; max-width: 420px; padding: 2rem; text-align: center; animation: slideIn 0.3s ease; }
-        .profile-modal-content h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e293b; }
-        .profile-modal-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 1rem auto; border: 4px solid #dc2626; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
-        .profile-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-modal-avatar .placeholder { font-size: 3rem; color: #94a3b8; }
-        .profile-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
-        .profile-modal-actions button { padding: 0.7rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
-        .btn-upload { background: #dc2626; color: white; }
-        .btn-upload:hover { background: #b91c1c; }
-        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0 !important; }
-
-        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="theme-admin">
     <div class="navbar">
         <div class="logo"><span class="logo-icon">👨‍💼</span><span class="logo-text">Admin Dashboard</span></div>
         <div class="user-info">
-            <!-- ⭐ Avatar -->
             <div class="avatar-wrap" onclick="openProfileModal()" title="Click to update profile picture">
                 <div id="navbarAvatar"></div>
                 <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
@@ -185,10 +56,10 @@
 
             <div class="card">
                 <div class="hotspot-header">
-                    <h3 style="margin-bottom:0; border-left: 3px solid #dc2626; padding-left: 0.8rem;">🔥 Hotspot Detection (DBSCAN)</h3>
+                    <h3>🔥 Hotspot Detection (DBSCAN)</h3>
                     <button onclick="loadHotspots()" class="btn-refresh">🔄 Refresh</button>
                 </div>
-                <div class="hotspot-header" style="margin-top:0.5rem;">
+                <div class="hotspot-header">
                     <span class="hint">Geographic clustering (ε ≈ 8.9 km, min 3 points) — click cluster or incident for details</span>
                 </div>
                 <div id="hotspotsContainer" class="incident-list">
@@ -212,7 +83,7 @@
 
             <div class="card full-width">
                 <div class="hotspot-header">
-                    <h3 style="margin-bottom:0; border-left: 3px solid #dc2626; padding-left: 0.8rem;">📋 All Incident Reports</h3>
+                    <h3>📋 All Incident Reports</h3>
                     <button onclick="loadAllIncidents()" class="btn-refresh">🔄 Refresh</button>
                 </div>
                 <div style="font-size:0.75rem; color:#64748b; margin: 0.5rem 0 1rem 0;">
@@ -255,7 +126,6 @@
         </div>
     </div>
 
-    <!-- ⭐ Profile Picture Modal -->
     <div id="profileModal" class="modal">
         <div class="profile-modal-content">
             <h2>Your Profile Picture</h2>
@@ -287,7 +157,6 @@
 
         let currentUser = null;
 
-        /* ⭐ Profile pic state */
         let profilePicUrl = null;
         let pendingProfileFile = null;
 
@@ -420,7 +289,6 @@
             document.getElementById('userName').textContent = currentUser.full_name;
             document.getElementById('userRole').textContent = 'Administrator';
 
-            // ⭐ Render avatar
             renderNavbarAvatar(currentUser?.profile_picture || null);
 
             await Promise.all([
