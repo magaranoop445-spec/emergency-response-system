@@ -6,10 +6,11 @@
     <title>Provider Dashboard | ESRS</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
-        
+
         .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
         .logo { display: flex; align-items: center; gap: 10px; }
         .logo-icon { font-size: 1.8rem; }
@@ -19,16 +20,33 @@
         .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
         .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
         .verify-badge { background: #f59e0b; color: white; padding: 0.2rem 0.5rem; border-radius: 15px; font-size: 0.6rem; margin-left: 8px; }
-        
+        .verify-badge.verified { background: #10b981; }
+
+        /* ⭐ Avatar */
+        .avatar-wrap { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626; display: block; background: #f1f5f9; }
+        .avatar-empty { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.1rem; background: #f8fafc; transition: all 0.2s; }
+        .avatar-wrap:hover .avatar-empty { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+
+        .availability-pill { display: inline-flex; align-items: center; gap: 6px; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; transition: all 0.2s ease; }
+        .availability-pill.available { background: #d1fae5; color: #059669; }
+        .availability-pill.unavailable { background: #fee2e2; color: #dc2626; }
+        .availability-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+        .availability-pill.unavailable .dot { animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
         .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
         .provider-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        
+
         .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
-        
+
         .incident-list { max-height: 500px; overflow-y: auto; }
-        .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid; }
-        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid; transition: all 0.2s; cursor: pointer; }
+        .incident-card:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px; }
         .priority-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
         .priority-CRITICAL { background: #dc2626; color: white; }
         .priority-HIGH { background: #f97316; color: white; }
@@ -37,20 +55,100 @@
         .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; }
         .status-pending { background: #fef3c7; color: #d97706; }
         .status-assigned { background: #dbeafe; color: #2563eb; }
+        .status-en_route { background: #e0e7ff; color: #4f46e5; }
+        .status-on_scene { background: #fef3c7; color: #d97706; }
         .status-completed { background: #d1fae5; color: #059669; }
-        
+
         .btn-accept { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-top: 0.5rem; }
-        .btn-status { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; margin-right: 0.5rem; }
-        .btn-secondary { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
-        
+        .btn-status { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; margin-right: 0.5rem; transition: all 0.2s ease; }
+        .btn-status:disabled { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; opacity: 0.7; }
+        .btn-secondary { background: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 0.85rem; }
+
+        .btn-location { background: linear-gradient(135deg, #dc2626, #e11d48); color: white; border: none; padding: 0.7rem 1.3rem; border-radius: 14px; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+        .btn-location:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35); }
+        .btn-location:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .btn-availability { width: 100%; margin-top: 0.8rem; padding: 0.7rem 1rem; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease; }
+        .btn-availability.available { background: #10b981; color: white; }
+        .btn-availability.available:hover { background: #059669; }
+        .btn-availability.unavailable { background: #f1f5f9; color: #dc2626; border-color: #dc2626; }
+        .btn-availability.unavailable:hover { background: #fee2e2; }
+        .btn-availability:disabled { opacity: 0.6; cursor: not-allowed; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center; margin-top: 1rem; }
         .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; }
         .stat-number { font-size: 1.5rem; font-weight: 800; color: #dc2626; }
         .stat-label { font-size: 0.7rem; color: #64748b; }
-        
+
         .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; }
-        
+        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; transition: border-color 0.2s; }
+        .search-bar input:focus { outline: none; border-color: #dc2626; }
+
+        .unavailable-banner { display: none; background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fca5a5; color: #991b1b; padding: 0.9rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 10px; }
+        .unavailable-banner.show { display: flex; }
+        .unavailable-banner i { font-size: 1.2rem; }
+
+        .location-banner { display: none; background: #fef3c7; border: 1px solid #fbbf24; color: #92400e; padding: 0.9rem 1.2rem; border-radius: 14px; margin-bottom: 1.2rem; font-weight: 600; font-size: 0.9rem; align-items: center; gap: 10px; }
+        .location-banner.show { display: flex; }
+
+        .locked-notice { display: none; background: #fef2f2; border: 1px dashed #fca5a5; color: #991b1b; padding: 0.6rem 0.9rem; border-radius: 10px; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.8rem; align-items: center; gap: 8px; }
+        .locked-notice.show { display: flex; }
+
+        .queue-toolbar { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.7rem; flex-wrap: wrap; }
+        .queue-toolbar label { font-size: 0.78rem; color: #64748b; font-weight: 600; }
+        .queue-toolbar select { padding: 0.4rem 0.7rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.82rem; font-weight: 600; cursor: pointer; background: white; color: #1a2c3e; }
+        .queue-toolbar select:focus { outline: none; border-color: #dc2626; }
+        .queue-meta-right { font-size: 0.75rem; color: #64748b; margin-left: auto; }
+
+        .esrs-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: white; padding: 0.9rem 1.2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; z-index: 9999; max-width: 340px; }
+        .esrs-toast.show { opacity: 1; transform: translateY(0); }
+        .esrs-toast.success { background: #059669; }
+        .esrs-toast.error { background: #dc2626; }
+        .esrs-toast.info { background: #2563eb; }
+
+        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
+        .searching-hint { text-align: center; padding: 1rem; color: #94a3b8; font-size: 0.85rem; }
+
+        #providerLocationMap { height: 320px; border-radius: 12px; margin-bottom: 0.8rem; }
+        .location-info { background: #f1f5f9; padding: 0.9rem 1.1rem; border-radius: 12px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .location-info .coords { font-family: 'Courier New', monospace; color: #475569; font-size: 0.8rem; margin-top: 4px; }
+        .location-info .status-set { color: #059669; font-weight: 700; }
+        .location-info .status-unset { color: #dc2626; font-weight: 700; }
+        .location-info .status-loading { color: #f59e0b; font-weight: 700; }
+        .location-actions { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .distance-pill { display: inline-block; background: #dbeafe; color: #1e40af; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; margin-left: 6px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 1; }
+        .modal-header h2 { font-size: 1.3rem; color: #1e293b; }
+        .close-modal { font-size: 1.8rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; line-height: 1; }
+        .close-modal:hover { color: #dc2626; }
+        .modal-body { padding: 1.5rem; }
+        .detail-row { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #64748b; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .detail-value { font-size: 0.95rem; color: #1e293b; line-height: 1.5; }
+        .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+
+        .media-container { margin-top: 8px; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
+        .media-container img { width: 100%; max-height: 300px; object-fit: contain; display: block; margin: 0 auto; }
+        .media-container video { width: 100%; max-height: 300px; object-fit: contain; background: #000; display: block; }
+
+        /* ⭐ Profile modal */
+        .profile-modal-content { background: white; border-radius: 24px; width: 90%; max-width: 420px; padding: 2rem; text-align: center; animation: slideIn 0.3s ease; }
+        .profile-modal-content h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e293b; }
+        .profile-modal-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 1rem auto; border: 4px solid #dc2626; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+        .profile-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-modal-avatar .placeholder { font-size: 3rem; color: #94a3b8; }
+        .profile-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+        .profile-modal-actions button { padding: 0.7rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
+        .btn-upload { background: #dc2626; color: white; }
+        .btn-upload:hover { background: #b91c1c; }
+        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0 !important; }
+
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
         @media (max-width: 900px) { .provider-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -58,45 +156,317 @@
     <div class="navbar">
         <div class="logo"><span class="logo-icon">🚒</span><span class="logo-text">Provider Dashboard</span></div>
         <div class="user-info">
-            <div><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">Provider</div><span id="verifyBadge" class="verify-badge"></span></div>
+            <!-- ⭐ Avatar -->
+            <div class="avatar-wrap" onclick="openProfileModal()" title="Click to update profile picture">
+                <div id="navbarAvatar"></div>
+                <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+            </div>
+            <div>
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-role" id="userRole">Provider</div>
+                <span id="verifyBadge" class="verify-badge"></span>
+                <span id="availabilityPill" class="availability-pill available" style="margin-left:8px;">
+                    <span class="dot"></span><span id="availabilityPillText">Available</span>
+                </span>
+            </div>
             <button onclick="logout()" class="logout-btn">Logout</button>
         </div>
     </div>
 
     <div class="dashboard-container">
+        <div id="unavailableBanner" class="unavailable-banner">
+            <i class="fas fa-ban"></i>
+            <div>
+                <strong>You are currently marked as unavailable.</strong>
+                <div style="font-weight:400; font-size:0.82rem; margin-top:2px;">
+                    You cannot accept new incidents or update status until you toggle back to Available.
+                </div>
+            </div>
+        </div>
+
+        <div id="locationBanner" class="location-banner">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+                <strong>Set your base location to see incidents near you.</strong>
+                <div style="font-weight:400; font-size:0.82rem; margin-top:2px;">
+                    Click "Use My Current Location" below.
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+            <h3>📍 Your Base Location</h3>
+
+            <div class="location-actions">
+                <button onclick="useMyLocation()" class="btn-location" id="myLocationBtn">
+                    <i class="fas fa-location-arrow"></i> Use My Current Location
+                </button>
+                <button onclick="toggleManualMode()" class="btn-secondary" id="manualToggleBtn">
+                    🗺️ Pick Manually on Map
+                </button>
+            </div>
+
+            <div id="locationManualWrapper" style="display:none">
+                <div id="providerLocationMap"></div>
+            </div>
+
+            <div class="location-info">
+                <div>
+                    <span id="locationStatusText" class="status-unset">⚠️ No location set</span>
+                    <div class="coords" id="locationCoords">Click "Use My Current Location" or pick on the map</div>
+                </div>
+                <button onclick="saveProviderLocation()" class="btn-accept" style="margin-top:0" id="saveLocationBtn" disabled>
+                    💾 Save Location
+                </button>
+            </div>
+        </div>
+
         <div class="provider-layout">
             <div class="card">
-                <h3>📊 Priority Queue <span style="font-size:0.7rem">(Weighted Ranking)</span></h3>
-                <div id="priorityQueueList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+                <h3>📊 Priority Queue <span style="font-size:0.7rem">(Distance-Aware)</span></h3>
+
+                <div class="queue-toolbar">
+                    <label for="radiusSelect">Radius:</label>
+                    <select id="radiusSelect" onchange="loadPriorityQueue()">
+                        <option value="5">Within 5 km</option>
+                        <option value="15">Within 15 km</option>
+                        <option value="30" selected>Within 30 km</option>
+                        <option value="50">Within 50 km</option>
+                        <option value="100">Within 100 km</option>
+                        <option value="0">Show All (no limit)</option>
+                    </select>
+                    <span id="queueSize" class="queue-meta-right">— incidents queued</span>
+                </div>
+
+                <div id="priorityQueueList" class="incident-list"><div class="empty-state">Loading...</div></div>
             </div>
 
             <div class="card">
                 <h3>✅ My Assigned Incidents</h3>
-                <div id="assignedIncidentsList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">No assigned incidents</div></div>
+                <div id="statusLockedNotice" class="locked-notice">
+                    <i class="fas fa-lock"></i>
+                    <span>Status updates are locked while you are unavailable.</span>
+                </div>
+                <div id="assignedIncidentsList" class="incident-list"><div class="empty-state">No assigned incidents</div></div>
                 <div class="stats-grid">
                     <div class="stat-card"><div class="stat-number" id="totalServices">0</div><div class="stat-label">Total Services</div></div>
                     <div class="stat-card"><div class="stat-number" id="providerRating">0</div><div class="stat-label">Rating</div></div>
-                    <div class="stat-card"><div class="stat-number" id="availabilityStatus">●</div><div class="stat-label">Available</div></div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="availabilityStatus">●</div>
+                        <div class="stat-label">Available</div>
+                    </div>
                 </div>
-                <button onclick="toggleAvailability()" class="btn-secondary" style="width:100%; margin-top:0.5rem">Toggle Availability</button>
+                <button id="availabilityBtn" onclick="toggleAvailability()" class="btn-availability available">
+                    ● You are Available — click to go off-duty
+                </button>
             </div>
         </div>
 
         <div class="card" style="margin-top:1.5rem">
-            <h3>🔍 Search Incidents by Location</h3>
-            <div class="search-bar"><input type="text" id="locationSearch" placeholder="Enter district or municipality..."><button onclick="searchByLocation()" class="btn-secondary">Search</button></div>
+            <h3>🔍 Search Incidents <span style="font-size:0.7rem; font-weight:normal; color:#64748b;">(Inverted Index + TF-IDF — live results as you type)</span></h3>
+            <div class="search-bar">
+                <input type="text" id="locationSearch" placeholder="Type to search — results appear automatically..."
+                       oninput="debouncedSearch()"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault(); searchByLocation();}">
+                <button onclick="searchByLocation()" class="btn-secondary">Search</button>
+            </div>
             <div id="locationSearchResults" class="incident-list"></div>
         </div>
     </div>
 
+    <div id="incidentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Incident Details</h2>
+                <span class="close-modal" onclick="closeIncidentModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- ⭐ Profile Picture Modal -->
+    <div id="profileModal" class="modal">
+        <div class="profile-modal-content">
+            <h2>Your Profile Picture</h2>
+            <div class="profile-modal-avatar" id="profileModalAvatar">
+                <span class="placeholder">📷</span>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:0.8rem;">
+                This is optional. You can use the dashboard without a profile picture.
+            </div>
+            <input type="file" id="profileModalInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleProfileModalFile(event)">
+            <div class="profile-modal-actions">
+                <button class="btn-upload" id="profileModalUploadBtn" onclick="document.getElementById('profileModalInput').click()">
+                    <i class="fas fa-upload"></i> <span id="profileModalUploadText">Upload Picture</span>
+                </button>
+                <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="esrs-toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
+
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : 'https://emergency-response-system-liard.vercel.app';
+
         let currentUser = null;
         let providerData = null;
+        let locationMap = null;
+        let locationMarker = null;
+        let pendingLocation = null;
+        let manualMapInitialized = false;
+
+        /* ⭐ Profile pic state */
+        let profilePicUrl = null;
+        let pendingProfileFile = null;
+
+        let toastTimer = null;
+        function showToast(message, type = 'info', duration = 3000) {
+            const el = document.getElementById('toast');
+            el.className = 'esrs-toast show ' + type;
+            el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i><span>${message}</span>`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.classList.remove('show'); }, duration);
+        }
+
+        /* ============================ AVATAR ============================ */
+        function renderNavbarAvatar(url) {
+            profilePicUrl = url;
+            const wrap = document.getElementById('navbarAvatar');
+            if (!wrap) return;
+            if (url) {
+                wrap.innerHTML = `<img class="avatar-img" src="${url}" alt="Profile" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\\'avatar-empty\\'><i class=\\'fas fa-user\\'></i></div>'">`;
+            } else {
+                wrap.innerHTML = `<div class="avatar-empty" title="Add a profile picture"><i class="fas fa-camera"></i></div>`;
+            }
+        }
+
+        window.openProfileModal = () => {
+            pendingProfileFile = null;
+            const container = document.getElementById('profileModalAvatar');
+            if (profilePicUrl) {
+                container.innerHTML = `<img src="${profilePicUrl}" alt="Profile">`;
+                document.getElementById('profileModalUploadText').textContent = 'Change Picture';
+            } else {
+                container.innerHTML = `<span class="placeholder">📷</span>`;
+                document.getElementById('profileModalUploadText').textContent = 'Upload Picture';
+            }
+            document.getElementById('profileModalInput').value = '';
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+
+        window.closeProfileModal = () => {
+            document.getElementById('profileModal').style.display = 'none';
+        };
+
+        window.handleProfileModalFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!ALLOWED.includes(file.type)) {
+                showToast('Please select a JPG, PNG, GIF or WebP image', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Image is too large (max 5MB)', 'error');
+                return;
+            }
+
+            pendingProfileFile = file;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profileModalAvatar').innerHTML =
+                    `<img src="${e.target.result}" alt="Preview">`;
+                document.getElementById('profileModalUploadText').textContent = 'Save Picture';
+                document.getElementById('profileModalUploadBtn').onclick = saveProfilePicture;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        async function saveProfilePicture() {
+            if (!pendingProfileFile || !currentUser) return;
+
+            const btn = document.getElementById('profileModalUploadBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const ext = (pendingProfileFile.name.split('.').pop() || 'jpg').toLowerCase();
+                const fileName = `${currentUser.user_id}_${Date.now()}.${ext}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('profile-pictures')
+                    .upload(fileName, pendingProfileFile, {
+                        cacheControl: '3600',
+                        upsert: true,
+                        contentType: pendingProfileFile.type
+                    });
+
+                if (uploadError) {
+                    showToast('Upload failed: ' + uploadError.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('profile-pictures')
+                    .getPublicUrl(fileName);
+
+                const publicUrl = urlData?.publicUrl;
+                if (!publicUrl) throw new Error('Could not get public URL');
+
+                const { error: dbError } = await supabase
+                    .from('users')
+                    .update({ profile_picture: publicUrl })
+                    .eq('user_id', currentUser.user_id);
+
+                if (dbError) {
+                    showToast('Saved to storage but DB update failed: ' + dbError.message, 'error');
+                } else {
+                    showToast('Profile picture updated!', 'success');
+                    currentUser.profile_picture = publicUrl;
+                    renderNavbarAvatar(publicUrl);
+                }
+
+                closeProfileModal();
+            } catch (err) {
+                console.error('Profile save error:', err);
+                showToast('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.onclick = () => document.getElementById('profileModalInput').click();
+                pendingProfileFile = null;
+            }
+        }
+
+        /* ============================ MEDIA ============================ */
+        function renderMediaElement(url) {
+            if (!url) return '';
+            const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url);
+            if (isImage) {
+                return `<div class="media-container"><img src="${url}" alt="Media evidence" /></div>`;
+            }
+            return `
+                <div class="media-container">
+                    <video controls playsinline>
+                        <source src="${url}">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>`;
+        }
 
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
@@ -106,94 +476,726 @@
             if (currentUser.role !== 'provider') {
                 if (currentUser.role === 'admin') window.location.href = 'admin-dashboard.html';
                 else window.location.href = 'requester-dashboard.html';
+                return;
             }
             const { data: provData } = await supabase.from('providers').select('*').eq('provider_id', currentUser.user_id).single();
             providerData = provData;
             document.getElementById('userName').textContent = currentUser.full_name;
-            document.getElementById('userRole').textContent = 'Provider';
-            if (providerData?.verified_by_admin) document.getElementById('verifyBadge').textContent = '✓ Verified';
-            else document.getElementById('verifyBadge').textContent = '⏳ Pending Approval';
-            
-            await loadPriorityQueue();
-            await loadAssignedIncidents();
-            await loadProviderStats();
+            const badge = document.getElementById('verifyBadge');
+            if (providerData?.verified_by_admin) { badge.textContent = '✓ Verified'; badge.classList.add('verified'); }
+            else { badge.textContent = '⏳ Pending Approval'; }
+            applyAvailabilityUI(providerData?.is_available !== false);
+            updateLocationInfo();
+            // ⭐ Render avatar
+            renderNavbarAvatar(currentUser?.profile_picture || null);
+            await Promise.all([loadPriorityQueue(), loadAssignedIncidents(), loadProviderStats()]);
         }
 
+        async function reverseGeocodeDistrict(lat, lng) {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=en&zoom=14`
+                );
+                const data = await res.json();
+                if (data?.address) {
+                    const a = data.address;
+                    return a.county || a.city_district || a.city || a.town || a.state_district || a.state || '';
+                }
+            } catch (e) {
+                console.error('Reverse geocode failed:', e);
+            }
+            return '';
+        }
+
+        window.useMyLocation = () => {
+            const btn = document.getElementById('myLocationBtn');
+            const statusEl = document.getElementById('locationStatusText');
+            const coordsEl = document.getElementById('locationCoords');
+
+            if (!navigator.geolocation) {
+                showToast('Geolocation not supported by your browser', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+            statusEl.innerHTML = '<span class="status-loading">⏳ Fetching GPS...</span>';
+            coordsEl.textContent = 'Waiting for location...';
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracyM = position.coords.accuracy || 0;
+
+                    pendingLocation = { lat, lng };
+                    coordsEl.textContent = `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                    statusEl.innerHTML = '<span class="status-loading">⏳ Getting district name...</span>';
+
+                    const district = await reverseGeocodeDistrict(lat, lng);
+
+                    statusEl.innerHTML = '<span class="status-loading">💾 Saving...</span>';
+
+                    const { error } = await supabase
+                        .from('providers')
+                        .update({ latitude: lat, longitude: lng })
+                        .eq('provider_id', currentUser.user_id);
+
+                    if (error) {
+                        statusEl.innerHTML = '<span class="status-unset">⚠️ Save failed</span>';
+                        coordsEl.textContent = error.message;
+                        showToast('Save failed: ' + error.message, 'error');
+                    } else {
+                        providerData.latitude = lat;
+                        providerData.longitude = lng;
+                        providerData._district = district;
+
+                        const accuracyTag = accuracyM > 100
+                            ? `<span style="color:#dc2626;"> — GPS ±${accuracyM.toFixed(0)} m (low accuracy — try moving near a window)</span>`
+                            : `<span style="color:#059669;"> — GPS ±${accuracyM.toFixed(0)} m</span>`;
+                        statusEl.innerHTML = `<span class="status-set">✓ Location set${district ? ' — ' + district : ''}</span>${accuracyTag}`;
+                        coordsEl.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+                        showToast('Base location saved! Queue recalculated.', 'success');
+
+                        document.getElementById('locationBanner').classList.remove('show');
+                        document.getElementById('saveLocationBtn').disabled = true;
+
+                        await loadPriorityQueue();
+                    }
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Current Location';
+                },
+                (error) => {
+                    let msg = 'Could not get location. ';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED: msg += 'Please allow location access in your browser.'; break;
+                        case error.POSITION_UNAVAILABLE: msg += 'Location unavailable.'; break;
+                        case error.TIMEOUT: msg += 'Request timed out.'; break;
+                        default: msg += 'Please try again.';
+                    }
+                    statusEl.innerHTML = '<span class="status-unset">⚠️ GPS failed</span>';
+                    coordsEl.textContent = msg;
+                    showToast(msg, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Current Location';
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        };
+
+        window.toggleManualMode = () => {
+            const wrapper = document.getElementById('locationManualWrapper');
+            const isHidden = wrapper.style.display === 'none';
+
+            if (isHidden) {
+                wrapper.style.display = 'block';
+                if (!manualMapInitialized) initLocationMap();
+                setTimeout(() => locationMap?.invalidateSize(), 100);
+            } else {
+                wrapper.style.display = 'none';
+            }
+        };
+
+        function initLocationMap() {
+            const hasExisting = providerData?.latitude && providerData?.longitude;
+            const defaultCenter = hasExisting
+                ? [providerData.latitude, providerData.longitude]
+                : [27.7172, 85.3240];
+
+            locationMap = L.map('providerLocationMap').setView(defaultCenter, hasExisting ? 15 : 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(locationMap);
+
+            if (hasExisting) {
+                locationMarker = L.marker([providerData.latitude, providerData.longitude])
+                    .addTo(locationMap)
+                    .bindPopup('📍 Your saved base location');
+                pendingLocation = { lat: providerData.latitude, lng: providerData.longitude };
+            }
+
+            locationMap.on('click', async (e) => {
+                const { lat, lng } = e.latlng;
+                pendingLocation = { lat, lng };
+
+                if (locationMarker) locationMap.removeLayer(locationMarker);
+                locationMarker = L.marker([lat, lng])
+                    .addTo(locationMap)
+                    .bindPopup('📍 Click "Save Location" to confirm')
+                    .openPopup();
+
+                document.getElementById('locationCoords').textContent =
+                    `Selected: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                document.getElementById('locationStatusText').innerHTML =
+                    '<span style="color:#f59e0b">⚠️ Unsaved — click Save Location</span>';
+                document.getElementById('saveLocationBtn').disabled = false;
+            });
+
+            manualMapInitialized = true;
+        }
+
+        function updateLocationInfo() {
+            const hasLocation = providerData?.latitude && providerData?.longitude;
+            const banner = document.getElementById('locationBanner');
+            if (hasLocation) {
+                banner.classList.remove('show');
+                document.getElementById('locationStatusText').innerHTML =
+                    '<span class="status-set">✓ Location saved</span>' +
+                    '<div style="font-size:0.7rem; color:#64748b; font-weight:400; margin-top:2px;">' +
+                    'Tip: If distances look wrong, re-click "Use My Current Location" — GPS readings vary ±100 m on WiFi.' +
+                    '</div>';
+                document.getElementById('locationCoords').textContent =
+                    `${Number(providerData.latitude).toFixed(5)}, ${Number(providerData.longitude).toFixed(5)}`;
+            } else {
+                banner.classList.add('show');
+                document.getElementById('locationStatusText').innerHTML =
+                    '<span class="status-unset">⚠️ No location set</span>';
+                document.getElementById('locationCoords').textContent =
+                    'Click "Use My Current Location" or pick on the map';
+            }
+        }
+
+        window.saveProviderLocation = async () => {
+            if (!pendingLocation) {
+                showToast('Pick a location first', 'error');
+                return;
+            }
+            const btn = document.getElementById('saveLocationBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            const { error } = await supabase
+                .from('providers')
+                .update({
+                    latitude: pendingLocation.lat,
+                    longitude: pendingLocation.lng
+                })
+                .eq('provider_id', currentUser.user_id);
+
+            if (error) {
+                showToast('Failed to save: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '💾 Save Location';
+                return;
+            }
+
+            providerData.latitude = pendingLocation.lat;
+            providerData.longitude = pendingLocation.lng;
+
+            const district = await reverseGeocodeDistrict(pendingLocation.lat, pendingLocation.lng);
+            document.getElementById('locationStatusText').innerHTML =
+                `<span class="status-set">✓ Location set${district ? ' — ' + district : ''}</span>`;
+
+            showToast('Base location saved! Queue recalculated.', 'success');
+            document.getElementById('locationBanner').classList.remove('show');
+            btn.innerHTML = '💾 Save Location';
+            btn.disabled = true;
+
+            await loadPriorityQueue();
+        };
+
+        function applyAvailabilityUI(isAvailable) {
+            const pill = document.getElementById('availabilityPill');
+            const pillText = document.getElementById('availabilityPillText');
+            const banner = document.getElementById('unavailableBanner');
+            const btn = document.getElementById('availabilityBtn');
+            const statCard = document.getElementById('availabilityStatus');
+            const statLabel = statCard.nextElementSibling;
+            if (isAvailable) {
+                pill.className = 'availability-pill available';
+                pillText.textContent = 'Available';
+                banner.classList.remove('show');
+                btn.className = 'btn-availability available';
+                btn.innerHTML = '● You are Available — click to go off-duty';
+                statCard.textContent = '●';
+                statCard.style.color = '#10b981';
+                statLabel.textContent = 'Available';
+            } else {
+                pill.className = 'availability-pill unavailable';
+                pillText.textContent = 'Unavailable';
+                banner.classList.add('show');
+                btn.className = 'btn-availability unavailable';
+                btn.innerHTML = '○ You are Unavailable — click to go on-duty';
+                statCard.textContent = '○';
+                statCard.style.color = '#dc2626';
+                statLabel.textContent = 'Unavailable';
+            }
+        }
+
+        window.showIncidentDetails = (incident, priorityScore, breakdown, distanceKm) => {
+            const priority = incident.priority_level || 'MEDIUM';
+            const score = priorityScore != null ? Math.round(priorityScore) : Math.round(incident.final_priority || 0);
+            const hasMedia = incident.video_url && incident.video_url !== '';
+
+            const bd = breakdown || {
+                humanHarm: incident.human_harm_score,
+                timeDecay: incident.time_decay_score,
+                proximity: null,
+                adminBoost: incident.admin_boost || 0
+            };
+
+            document.getElementById('modalTitle').innerHTML = `🚨 ${incident.emergency_type} Incident`;
+
+            const breakdownBlock = `
+                <div class="detail-row">
+                    <div class="detail-label">Priority Breakdown</div>
+                    <div class="detail-value">
+                        ${bd.humanHarm != null ? `• Human Harm (55%): ${Math.round(bd.humanHarm)}%<br>` : ''}
+                        ${bd.timeDecay != null ? `• Time Decay (20%): ${Math.round(bd.timeDecay)}%<br>` : ''}
+                        ${bd.proximity != null ? `• Proximity (20%): ${bd.proximity}%<br>` : ''}
+                        • Admin Boost (5%): ${bd.adminBoost || 0}%
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Weighted Priority Score</div>
+                    <div class="detail-value">
+                        <span class="priority-tag priority-${priority}">${priority}</span>
+                        &nbsp;(${score}/100)
+                    </div>
+                </div>
+
+                ${distanceKm != null ? `
+                <div class="detail-row">
+                    <div class="detail-label">Distance From Your Base</div>
+                    <div class="detail-value">
+                        <strong>${distanceKm.toFixed(2)} km</strong>
+                        <span class="distance-pill">${bd.proximity}% proximity score</span>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${breakdownBlock}
+
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">
+                        ${incident.province ? incident.province + ', ' : ''}
+                        ${incident.district || 'N/A'},
+                        ${incident.municipality || 'N/A'}
+                        ${incident.ward ? ', Ward ' + incident.ward : ''}
+                        ${incident.tole ? ', ' + incident.tole : ''}
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${incident.description || 'No description'}</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(incident.created_at).toLocaleString()}</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span>
+                    </div>
+                </div>
+
+                ${hasMedia ? `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value">${renderMediaElement(incident.video_url)}</div>
+                </div>
+                ` : `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value" style="color:#94a3b8;">No media uploaded</div>
+                </div>
+                `}
+            `;
+
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+
+        window.closeIncidentModal = () => {
+            const videos = document.querySelectorAll('#modalBody video');
+            videos.forEach(v => { try { v.pause(); } catch(e){} });
+            document.getElementById('incidentModal').style.display = 'none';
+        };
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('incidentModal')) window.closeIncidentModal();
+            if (e.target === document.getElementById('profileModal')) closeProfileModal();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { window.closeIncidentModal(); closeProfileModal(); }
+        });
+
         async function loadPriorityQueue() {
-            const { data, error } = await supabase.from('emergency_requests').select('*').eq('status', 'pending').order('final_priority', { ascending: false });
             const container = document.getElementById('priorityQueueList');
-            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No pending incidents</div>'; return; }
-            if (!providerData?.verified_by_admin) { container.innerHTML = '<div class="empty-state">⚠️ Waiting for admin approval to accept requests</div>'; return; }
-            
-            container.innerHTML = data.map(incident => `
-                <div class="incident-card" style="border-left-color: ${getPriorityColor(incident.priority_level)}">
-                    <div class="incident-header"><strong>🚨 ${incident.emergency_type}</strong><span class="priority-badge priority-${incident.priority_level || 'MEDIUM'}">${incident.priority_level || 'MEDIUM'}</span></div>
+
+            if (!providerData?.verified_by_admin) {
+                container.innerHTML = '<div class="empty-state">⚠️ Waiting for admin approval to accept requests</div>';
+                document.getElementById('queueSize').textContent = '—';
+                return;
+            }
+            if (providerData?.is_available === false) {
+                container.innerHTML = '<div class="empty-state">🚫 You are currently unavailable.<br><span style="font-size:0.8rem;color:#64748b">Toggle availability to see new incidents.</span></div>';
+                document.getElementById('queueSize').textContent = '—';
+                return;
+            }
+            if (!providerData?.latitude || !providerData?.longitude) {
+                container.innerHTML = '<div class="empty-state">📍 Click "Use My Current Location" above to see incidents near you.</div>';
+                document.getElementById('queueSize').textContent = '—';
+                return;
+            }
+
+            const radius = document.getElementById('radiusSelect').value || 30;
+            const url = `${API_URL}/api/provider-ranked-queue?provider_id=${encodeURIComponent(currentUser.user_id)}&max_distance_km=${radius}&lat=${providerData.latitude}&lng=${providerData.longitude}`;
+
+            console.log('[PriorityQueue] Fetching:', url);
+
+            try {
+                const res = await fetch(url);
+                console.log('[PriorityQueue] Status:', res.status, 'Content-Type:', res.headers.get('content-type'));
+
+                const rawText = await res.text();
+                console.log('[PriorityQueue] Response preview:', rawText.substring(0, 200));
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status} — ${rawText.substring(0, 120)}`);
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (parseErr) {
+                    throw new Error(`Response is not JSON (probably HTML). Preview: ${rawText.substring(0, 120)}`);
+                }
+
+                if (!data.success) {
+                    if (data.needs_location) {
+                        container.innerHTML = '<div class="empty-state">📍 Set your base location above.</div>';
+                        document.getElementById('queueSize').textContent = '—';
+                        return;
+                    }
+                    throw new Error(data.error || 'Server returned failure');
+                }
+
+                const items = data.all_incidents || [];
+                const scope = radius === '0' ? 'total' : `within ${radius} km`;
+                document.getElementById('queueSize').textContent = `${items.length} incident(s) ${scope}`;
+
+                if (items.length === 0) {
+                    const radiusLabel = radius === '0' ? 'in the entire region' : `within ${radius} km`;
+                    container.innerHTML = `<div class="empty-state">No pending incidents ${radiusLabel} of your base.<br><span style="font-size:0.75rem;color:#94a3b8">Try increasing the radius.</span></div>`;
+                    return;
+                }
+
+                container.innerHTML = items.map((item, idx) => {
+                    const inc = item.incident;
+                    const score = item.priority;
+                    const dist = item.distance_km;
+
+                    let distLabel = '';
+                    if (dist != null) {
+                        const meters = dist * 1000;
+                        const label = dist < 1 ? meters.toFixed(0) + ' m' : dist.toFixed(1) + ' km';
+                        const tolerance = meters < 100 ? '±30 m' : meters < 500 ? '±100 m' : '±300 m';
+                        distLabel = `<span class="distance-pill" title="Distance has ~${tolerance} GPS tolerance">${label} (${tolerance})</span>`;
+                    }
+
+                    return `
+                        <div class="incident-card"
+                             style="border-left-color: ${getPriorityColor(inc.priority_level)}"
+                             onclick="showIncidentDetails(window.__pqCache[${idx}].incident, window.__pqCache[${idx}].priority, window.__pqCache[${idx}].breakdown, window.__pqCache[${idx}].distance_km)">
+                            <div class="incident-header">
+                                <strong>🚨 ${inc.emergency_type}</strong>
+                                <span class="priority-badge priority-${inc.priority_level || 'MEDIUM'}">${inc.priority_level || 'MEDIUM'}</span>
+                            </div>
+                            <div>📍 ${inc.district}, ${inc.municipality}, Ward ${inc.ward} ${distLabel}</div>
+                            <div>📝 ${inc.description?.substring(0, 80) || ''}</div>
+                            <div>Score: <strong>${score.toFixed(1)}</strong>/100 <span style="font-size:0.7rem; color:#64748b;">(distance-aware)</span></div>
+                            <button onclick="event.stopPropagation(); acceptIncident(${inc.request_id})" class="btn-accept">✅ Accept Request</button>
+                        </div>
+                    `;
+                }).join('');
+                window.__pqCache = items;
+
+            } catch (err) {
+                console.error('[PriorityQueue] ❌ Failed:', err);
+
+                container.innerHTML = `
+                    <div style="background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; padding:0.8rem 0.9rem; border-radius:10px; margin-bottom:0.8rem; font-size:0.78rem;">
+                        <strong>⚠️ Distance ranking unavailable</strong><br>
+                        <span style="font-size:0.72rem; color:#7f1d1d; word-break:break-word;">${err.message || 'Unknown error'}</span>
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-top:6px;">
+                            Falling back to SQL ranking (no distance). Open browser console (F12) for details.
+                        </div>
+                    </div>
+                    <div id="fallbackList"></div>
+                `;
+                await loadPriorityQueueFallback('fallbackList');
+            }
+        }
+
+        async function loadPriorityQueueFallback(targetId = 'priorityQueueList') {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+
+            const { data, error } = await supabase
+                .from('emergency_requests').select('*').eq('status', 'pending')
+                .order('final_priority', { ascending: false });
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No pending incidents</div>';
+                document.getElementById('queueSize').textContent = '—';
+                return;
+            }
+
+            document.getElementById('queueSize').textContent = `${data.length} incident(s) queued (SQL fallback)`;
+            container.innerHTML = data.map((incident, idx) => `
+                <div class="incident-card"
+                     style="border-left-color: ${getPriorityColor(incident.priority_level)}"
+                     onclick="showIncidentDetails(window.__pqCacheFallback[${idx}], null, null, null)">
+                    <div class="incident-header">
+                        <strong>🚨 ${incident.emergency_type}</strong>
+                        <span class="priority-badge priority-${incident.priority_level || 'MEDIUM'}">${incident.priority_level || 'MEDIUM'}</span>
+                    </div>
                     <div>📍 ${incident.district}, ${incident.municipality}, Ward ${incident.ward}</div>
                     <div>📝 ${incident.description?.substring(0, 80)}</div>
                     <div>Score: ${incident.final_priority?.toFixed(1) || 0}/100</div>
-                    <button onclick="acceptIncident(${incident.request_id})" class="btn-accept">✅ Accept Request</button>
+                    <button onclick="event.stopPropagation(); acceptIncident(${incident.request_id})" class="btn-accept">✅ Accept Request</button>
                 </div>
             `).join('');
+            window.__pqCacheFallback = data;
         }
 
         async function loadAssignedIncidents() {
-            const { data, error } = await supabase.from('emergency_requests').select('*').eq('assigned_provider_id', currentUser.user_id).not('status', 'eq', 'completed');
+            const isAvailable = providerData?.is_available !== false;
+            const lockedNotice = document.getElementById('statusLockedNotice');
+            lockedNotice.classList.toggle('show', !isAvailable);
+
+            const { data, error } = await supabase
+                .from('emergency_requests').select('*')
+                .eq('assigned_provider_id', currentUser.user_id)
+                .not('status', 'eq', 'completed');
+
             const container = document.getElementById('assignedIncidentsList');
-            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No assigned incidents</div>'; return; }
-            
-            container.innerHTML = data.map(incident => `
-                <div class="incident-card">
-                    <div class="incident-header"><strong>${incident.emergency_type}</strong><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'ASSIGNED'}</span></div>
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No assigned incidents</div>';
+                return;
+            }
+
+            const dis = isAvailable ? '' : 'disabled title="You must be Available to update status"';
+            container.innerHTML = data.map((incident, idx) => `
+                <div class="incident-card" onclick="showIncidentDetails(window.__assignedCache[${idx}], null, null, null)">
+                    <div class="incident-header">
+                        <strong>${incident.emergency_type}</strong>
+                        <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'ASSIGNED'}</span>
+                    </div>
                     <div>📍 ${incident.district}, ${incident.municipality}</div>
                     <div class="button-group" style="margin-top:8px">
-                        <button onclick="updateStatus(${incident.request_id}, 'en_route')" class="btn-status">🚗 En Route</button>
-                        <button onclick="updateStatus(${incident.request_id}, 'on_scene')" class="btn-status">📍 On Scene</button>
-                        <button onclick="updateStatus(${incident.request_id}, 'completed')" class="btn-status" style="background:#10b981">✅ Complete</button>
+                        <button onclick="event.stopPropagation(); updateStatus(${incident.request_id}, 'en_route')" class="btn-status" ${dis}>🚗 En Route</button>
+                        <button onclick="event.stopPropagation(); updateStatus(${incident.request_id}, 'on_scene')" class="btn-status" ${dis}>📍 On Scene</button>
+                        <button onclick="event.stopPropagation(); updateStatus(${incident.request_id}, 'completed')" class="btn-status" style="background:#10b981" ${dis}>✅ Complete</button>
                     </div>
                 </div>
             `).join('');
+            window.__assignedCache = data;
         }
 
         async function loadProviderStats() {
-            const { data } = await supabase.from('providers').select('total_services, rating, is_available').eq('provider_id', currentUser.user_id).single();
+            const { data } = await supabase.from('providers')
+                .select('total_services, rating, is_available')
+                .eq('provider_id', currentUser.user_id).single();
             if (data) {
+                providerData = { ...providerData, ...data };
                 document.getElementById('totalServices').textContent = data.total_services || 0;
                 document.getElementById('providerRating').textContent = data.rating?.toFixed(1) || '0';
-                document.getElementById('availabilityStatus').textContent = data.is_available ? '● Available' : '○ Unavailable';
             }
         }
 
         window.acceptIncident = async (id) => {
-            if (!providerData?.verified_by_admin) { alert('Your account is pending admin approval'); return; }
-            const { error } = await supabase.from('emergency_requests').update({ status: 'assigned', assigned_provider_id: currentUser.user_id, assigned_at: new Date() }).eq('request_id', id);
-            if (error) alert('Error: ' + error.message);
-            else { alert('Incident accepted!'); await loadPriorityQueue(); await loadAssignedIncidents(); await loadProviderStats(); }
+            if (!providerData?.verified_by_admin) { showToast('Your account is pending admin approval', 'error'); return; }
+            if (providerData?.is_available === false) { showToast('You are unavailable — toggle availability first', 'error'); return; }
+            const { error } = await supabase.from('emergency_requests').update({
+                status: 'assigned', assigned_provider_id: currentUser.user_id, assigned_at: new Date()
+            }).eq('request_id', id);
+            if (error) showToast('Error: ' + error.message, 'error');
+            else {
+                showToast('Incident accepted!', 'success');
+                await loadPriorityQueue();
+                await loadAssignedIncidents();
+                await loadProviderStats();
+            }
         };
 
         window.updateStatus = async (id, status) => {
+            if (providerData?.is_available === false) {
+                showToast('You cannot update status while Unavailable. Toggle to Available first.', 'error');
+                return;
+            }
             const { error } = await supabase.from('emergency_requests').update({ status }).eq('request_id', id);
-            if (error) alert('Error: ' + error.message);
-            else { alert(`Status: ${status}`); await loadAssignedIncidents(); if (status === 'completed') await loadProviderStats(); }
+            if (error) showToast('Error: ' + error.message, 'error');
+            else {
+                showToast(`Status updated: ${status.replace('_', ' ')}`, 'success');
+                await loadAssignedIncidents();
+                if (status === 'completed') await loadProviderStats();
+            }
+        };
+
+        let searchDebounceTimer = null;
+
+        window.debouncedSearch = () => {
+            clearTimeout(searchDebounceTimer);
+            const query = document.getElementById('locationSearch').value.trim();
+
+            if (!query) {
+                document.getElementById('locationSearchResults').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('locationSearchResults').innerHTML =
+                '<div class="searching-hint">⏳ Searching...</div>';
+
+            searchDebounceTimer = setTimeout(() => {
+                searchByLocation();
+            }, 300);
         };
 
         window.searchByLocation = async () => {
-            const query = document.getElementById('locationSearch').value;
-            if (!query) return;
-            const { data } = await supabase.from('emergency_requests').select('*').ilike('district', `%${query}%`).or(`municipality.ilike.%${query}%`);
+            const query = document.getElementById('locationSearch').value.trim();
             const container = document.getElementById('locationSearchResults');
-            if (!data || data.length === 0) container.innerHTML = '<div class="empty-state">No incidents found</div>';
-            else container.innerHTML = data.map(i => `<div class="incident-card"><strong>${i.emergency_type}</strong> at ${i.district}, ${i.municipality}<br>Status: ${i.status}</div>`).join('');
+            if (!query) { container.innerHTML = ''; return; }
+
+            container.innerHTML = '<div class="searching-hint">🔍 Searching inverted index...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(query)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data.success) throw new Error('Server returned failure');
+
+                if (!data.results || data.results.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No incidents found</div>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div style="font-size:0.72rem; color:#64748b; margin-bottom:0.5rem;">
+                        ${data.count} result(s) — ranked by TF-IDF
+                    </div>
+                ` + data.results.map((r, idx) => `
+                    <div class="incident-card" style="border-left-color:#3b82f6"
+                         onclick="showSearchResultDetails(window.__searchCache[${idx}])">
+                        <div class="incident-header">
+                            <strong>${r.type}</strong>
+                            <span style="font-size:0.7rem; color:#3b82f6; font-weight:600;">Score: ${r.relevance_score.toFixed(2)}</span>
+                        </div>
+                        <div>📍 ${r.location}</div>
+                        <div>📝 ${r.description?.substring(0, 100) || ''}</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:4px;">
+                            Status: ${r.status?.toUpperCase() || 'PENDING'}
+                            ${r.priority ? ' · Priority: ' + r.priority : ''}
+                        </div>
+                    </div>
+                `).join('');
+                window.__searchCache = data.results;
+            } catch (err) {
+                console.warn('Search API failed, using SQL fallback:', err);
+                await searchByLocationFallback(query);
+            }
         };
 
+        window.showSearchResultDetails = (r) => {
+            const priority = r.priority || 'MEDIUM';
+            document.getElementById('modalTitle').innerHTML = `🚨 ${r.type} Incident`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Priority Level</div>
+                    <div class="detail-value"><span class="priority-tag priority-${priority}">${priority}</span></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Search Relevance (TF-IDF)</div>
+                    <div class="detail-value">Score: <strong>${r.relevance_score.toFixed(2)}</strong></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${r.location || 'N/A'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${r.description || 'No description'}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(r.created_at).toLocaleString()}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge status-${r.status}">${r.status?.toUpperCase() || 'PENDING'}</span></div>
+                </div>
+            `;
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+
+        async function searchByLocationFallback(query) {
+            const container = document.getElementById('locationSearchResults');
+            const { data } = await supabase.from('emergency_requests').select('*')
+                .ilike('district', `%${query}%`)
+                .or(`municipality.ilike.%${query}%`);
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No incidents found</div>';
+                return;
+            }
+            container.innerHTML = data.map((i, idx) => `
+                <div class="incident-card" onclick="showIncidentDetails(window.__fallbackCache[${idx}], null, null, null)">
+                    <strong>${i.emergency_type}</strong> at ${i.district}, ${i.municipality}<br>
+                    <span class="status-badge status-${i.status}">${i.status?.toUpperCase()}</span>
+                </div>
+            `).join('');
+            window.__fallbackCache = data;
+        }
+
         window.toggleAvailability = async () => {
-            const { data } = await supabase.from('providers').select('is_available').eq('provider_id', currentUser.user_id).single();
-            await supabase.from('providers').update({ is_available: !data?.is_available }).eq('provider_id', currentUser.user_id);
-            await loadProviderStats();
+            if (!currentUser) return;
+            const btn = document.getElementById('availabilityBtn');
+            const currentlyAvailable = providerData?.is_available !== false;
+            const newValue = !currentlyAvailable;
+            btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            try {
+                const { error } = await supabase.from('providers')
+                    .update({ is_available: newValue })
+                    .eq('provider_id', currentUser.user_id);
+                if (error) { showToast('Failed to update: ' + error.message, 'error'); btn.disabled = false; btn.innerHTML = originalHTML; return; }
+                providerData.is_available = newValue;
+                applyAvailabilityUI(newValue);
+                showToast(newValue ? 'You are now Available' : 'You are now Unavailable — status updates locked', newValue ? 'success' : 'info');
+                await loadPriorityQueue();
+                await loadAssignedIncidents();
+                btn.disabled = false;
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
         };
 
         window.logout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
-        function getPriorityColor(p) { switch(p) { case 'CRITICAL': return '#dc2626'; case 'HIGH': return '#f97316'; case 'MEDIUM': return '#eab308'; default: return '#22c55e'; } }
-        
+
+        function getPriorityColor(p) {
+            switch (p) {
+                case 'CRITICAL': return '#dc2626';
+                case 'HIGH': return '#f97316';
+                case 'MEDIUM': return '#eab308';
+                default: return '#22c55e';
+            }
+        }
+
+        window.loadPriorityQueue = loadPriorityQueue;
+
         checkAuth();
     </script>
 </body>

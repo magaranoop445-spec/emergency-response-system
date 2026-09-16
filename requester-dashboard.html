@@ -21,6 +21,74 @@
         .user-email { font-size: 0.7rem; color: #64748b; }
         .user-role-badge { font-size: 0.6rem; background: #dc2626; color: white; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 2px; }
         .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
+
+        /* ⭐ Avatar */
+        .avatar-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .avatar-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dc2626;
+            display: block;
+            background: #f1f5f9;
+        }
+        .avatar-empty {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            background: #f8fafc;
+            transition: all 0.2s;
+        }
+        .avatar-wrap:hover .avatar-empty {
+            border-color: #dc2626;
+            color: #dc2626;
+            background: #fef2f2;
+        }
+        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .avatar-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #10b981;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.5rem;
+        }
+        .avatar-badge.pending { background: #f59e0b; }
         
         .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 1.5rem; }
         .requester-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -83,12 +151,9 @@
         .btn-clear { background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; padding: 0.5rem 1rem; border-radius: 30px; cursor: pointer; font-size: 0.8rem; }
         .btn-clear:hover { background: #e2e8f0; }
         
-        .video-container { margin-top: 12px; border-radius: 12px; overflow: hidden; background: #000; position: relative; }
-        .video-container video { width: 100%; max-height: 300px; object-fit: contain; background: #000; cursor: pointer; }
-        .video-thumb { position: relative; cursor: pointer; }
-        .video-thumb img { width: 100%; border-radius: 12px; }
-        .video-thumb .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .video-thumb .play-icon i { font-size: 24px; color: white; margin-left: 4px; }
+        .media-container { margin-top: 12px; border-radius: 12px; overflow: hidden; background: #000; position: relative; text-align: center; }
+        .media-container img { width: 100%; max-height: 300px; object-fit: contain; display: block; margin: 0 auto; border-radius: 12px; }
+        .media-container video { width: 100%; max-height: 300px; object-fit: contain; background: #000; display: block; border-radius: 12px; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
@@ -102,6 +167,35 @@
         .detail-value { font-size: 1rem; color: #1e293b; margin-top: 0.2rem; }
         .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
         @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* ⭐ Profile modal */
+        .profile-modal-content { background: white; border-radius: 24px; width: 90%; max-width: 420px; padding: 2rem; text-align: center; animation: slideIn 0.3s ease; }
+        .profile-modal-content h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e293b; }
+        .profile-modal-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            margin: 0 auto 1rem auto;
+            border: 4px solid #dc2626;
+            overflow: hidden;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-modal-avatar .placeholder { font-size: 3rem; color: #94a3b8; }
+        .profile-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+        .profile-modal-actions button { padding: 0.7rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
+        .btn-upload { background: #dc2626; color: white; }
+        .btn-upload:hover { background: #b91c1c; }
+        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0 !important; }
+
+        .esrs-toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: white; padding: 0.9rem 1.2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; z-index: 9999; max-width: 340px; }
+        .esrs-toast.show { opacity: 1; transform: translateY(0); }
+        .esrs-toast.success { background: #059669; }
+        .esrs-toast.error { background: #dc2626; }
+        .esrs-toast.info { background: #2563eb; }
         
         @media (max-width: 900px) { .requester-layout { grid-template-columns: 1fr; } .form-card { max-height: none; } }
     </style>
@@ -110,6 +204,12 @@
     <div class="navbar">
         <div class="logo"><span class="logo-icon">🚨</span><span class="logo-text">Requester Dashboard</span></div>
         <div class="user-info">
+            <!-- ⭐ Avatar -->
+            <div class="avatar-wrap" onclick="openProfileModal()" title="Click to update profile picture">
+                <div id="navbarAvatar"></div>
+                <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+                <div class="avatar-badge"><i class="fas fa-check"></i></div>
+            </div>
             <div class="user-details">
                 <div class="user-name" id="userName">Loading...</div>
                 <div class="user-email" id="userEmail"></div>
@@ -210,8 +310,8 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>🎥 Video Evidence (Optional, Max 50MB)</label>
-                        <input type="file" id="videoUpload" accept="video/mp4,video/webm">
+                        <label>📸 Media Evidence (Optional, image or video, Max 50MB)</label>
+                        <input type="file" id="videoUpload" accept="video/mp4,video/webm,image/jpeg,image/png,image/gif,image/webp">
                     </div>
                     
                     <button type="submit" class="btn-primary">🚨 SUBMIT EMERGENCY REPORT</button>
@@ -220,7 +320,7 @@
         </div>
 
         <div class="card">
-            <h3>🔍 Search All Incidents <span style="font-size:0.7rem; font-weight:normal">(Real-time - results appear as you type)</span></h3>
+            <h3>🔍 Search All Incidents <span style="font-size:0.7rem;font-weight:normal">(Real-time - results appear as you type)</span></h3>
             <div class="search-container">
                 <input type="text" id="searchQuery" placeholder="Type to search incidents (e.g., 'fire', 'accident', 'Thamel')..." 
                        onkeyup="realTimeSearch()" onfocus="realTimeSearch()">
@@ -230,7 +330,7 @@
         </div>
 
         <div class="card">
-            <h3>📋 All Incident Reports <span style="font-size:0.7rem; font-weight:normal">(Showing all emergencies from all requesters)</span></h3>
+            <h3>📋 All Incident Reports <span style="font-size:0.7rem;font-weight:normal">(Showing all emergencies from all requesters)</span></h3>
             <div id="myIncidentsList" class="incident-list"><div class="empty-state">No incidents reported yet. Click on the map to report an emergency.</div></div>
         </div>
     </div>
@@ -244,6 +344,28 @@
             <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
+
+    <!-- ⭐ Profile Picture Modal -->
+    <div id="profileModal" class="modal">
+        <div class="profile-modal-content">
+            <h2>Your Profile Picture</h2>
+            <div class="profile-modal-avatar" id="profileModalAvatar">
+                <span class="placeholder">📷</span>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:0.8rem;">
+                This is optional. You can use the dashboard without a profile picture.
+            </div>
+            <input type="file" id="profileModalInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleProfileModalFile(event)">
+            <div class="profile-modal-actions">
+                <button class="btn-upload" id="profileModalUploadBtn" onclick="document.getElementById('profileModalInput').click()">
+                    <i class="fas fa-upload"></i> <span id="profileModalUploadText">Upload Picture</span>
+                </button>
+                <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="esrs-toast"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module">
@@ -266,6 +388,156 @@
         let locationMarker = null;
         let searchTimeout = null;
         let allIncidentsCache = [];
+
+        /* ⭐ Profile pic state */
+        let profilePicUrl = null;
+        let pendingProfileFile = null;
+
+        /* ⭐ NEW: location source tracking + GPS accuracy */
+        let locationSource = null;    // 'gps' | 'click' | null
+        let selectedAccuracy = null;  // meters when locationSource === 'gps'
+
+        /* ============================ TOAST ============================ */
+        let toastTimer = null;
+        function showToast(message, type = 'info', duration = 3000) {
+            const el = document.getElementById('toast');
+            el.className = 'esrs-toast show ' + type;
+            el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i><span>${message}</span>`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { el.classList.remove('show'); }, duration);
+        }
+
+        /* ============================ AVATAR ============================ */
+        function renderNavbarAvatar(url) {
+            profilePicUrl = url;
+            const wrap = document.getElementById('navbarAvatar');
+            if (!wrap) return;
+            if (url) {
+                wrap.innerHTML = `<img class="avatar-img" src="${url}" alt="Profile" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\\'avatar-empty\\'><i class=\\'fas fa-user\\'></i></div>'">`;
+            } else {
+                wrap.innerHTML = `<div class="avatar-empty" title="Add a profile picture"><i class="fas fa-camera"></i></div>`;
+            }
+        }
+
+        window.openProfileModal = () => {
+            pendingProfileFile = null;
+            const container = document.getElementById('profileModalAvatar');
+            if (profilePicUrl) {
+                container.innerHTML = `<img src="${profilePicUrl}" alt="Profile">`;
+                document.getElementById('profileModalUploadText').textContent = 'Change Picture';
+            } else {
+                container.innerHTML = `<span class="placeholder">📷</span>`;
+                document.getElementById('profileModalUploadText').textContent = 'Upload Picture';
+            }
+            document.getElementById('profileModalInput').value = '';
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+
+        window.closeProfileModal = () => {
+            document.getElementById('profileModal').style.display = 'none';
+        };
+
+        window.handleProfileModalFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!ALLOWED.includes(file.type)) {
+                showToast('Please select a JPG, PNG, GIF or WebP image', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Image is too large (max 5MB)', 'error');
+                return;
+            }
+
+            pendingProfileFile = file;
+
+            // Show preview instantly
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profileModalAvatar').innerHTML =
+                    `<img src="${e.target.result}" alt="Preview">`;
+                document.getElementById('profileModalUploadText').textContent = 'Save Picture';
+                document.getElementById('profileModalUploadBtn').onclick = saveProfilePicture;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        async function saveProfilePicture() {
+            if (!pendingProfileFile || !currentUser) return;
+
+            const btn = document.getElementById('profileModalUploadBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const ext = (pendingProfileFile.name.split('.').pop() || 'jpg').toLowerCase();
+                const fileName = `${currentUser.user_id}_${Date.now()}.${ext}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('profile-pictures')
+                    .upload(fileName, pendingProfileFile, {
+                        cacheControl: '3600',
+                        upsert: true,
+                        contentType: pendingProfileFile.type
+                    });
+
+                if (uploadError) {
+                    showToast('Upload failed: ' + uploadError.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('profile-pictures')
+                    .getPublicUrl(fileName);
+
+                const publicUrl = urlData?.publicUrl;
+                if (!publicUrl) throw new Error('Could not get public URL');
+
+                const { error: dbError } = await supabase
+                    .from('users')
+                    .update({ profile_picture: publicUrl })
+                    .eq('user_id', currentUser.user_id);
+
+                if (dbError) {
+                    showToast('Saved to storage but DB update failed: ' + dbError.message, 'error');
+                } else {
+                    showToast('Profile picture updated!', 'success');
+                    currentUser.profile_picture = publicUrl;
+                    renderNavbarAvatar(publicUrl);
+                }
+
+                closeProfileModal();
+            } catch (err) {
+                console.error('Profile save error:', err);
+                showToast('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.onclick = () => document.getElementById('profileModalInput').click();
+                pendingProfileFile = null;
+            }
+        }
+
+        /* ============================ MEDIA RENDER ============================ */
+        function renderMediaElement(url) {
+            if (!url) return '';
+            const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url);
+            if (isImage) {
+                return `<div class="media-container"><img src="${url}" alt="Media evidence" /></div>`;
+            }
+            return `
+                <div class="media-container">
+                    <video controls playsinline>
+                        <source src="${url}">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>`;
+        }
 
         window.calculatePreview = function() {
             const q1 = parseInt(document.querySelector('input[name="q1"]:checked')?.value || 0);
@@ -293,6 +565,9 @@
             document.getElementById('userName').textContent = currentUser?.full_name || currentUser?.email || 'Requester';
             document.getElementById('userEmail').textContent = currentUser?.email || '';
             document.getElementById('userRole').textContent = 'REQUESTER';
+
+            // ⭐ Render avatar
+            renderNavbarAvatar(currentUser?.profile_picture || null);
             
             if (currentUser?.role !== 'requester') {
                 if (currentUser?.role === 'admin') window.location.href = 'admin-dashboard.html';
@@ -323,7 +598,7 @@
                         const priority = incident.priority_level || 'LOW';
                         const priorityScore = Math.round(incident.priority_score || 0);
                         const reportedBy = incident.requestor_id === currentUser.user_id ? 'You' : 'Another User';
-                        const hasVideo = incident.video_url && incident.video_url !== '';
+                        const hasMedia = incident.video_url && incident.video_url !== '';
                         const idStr = String(incident.id);
                         
                         return `
@@ -339,7 +614,7 @@
                             <div>⏱️ ${new Date(incident.created_at).toLocaleString()}</div>
                             <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                             ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
-                            ${hasVideo ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;"><i class="fas fa-video"></i> 📹 Video evidence attached - Click to view</div>` : ''}
+                            ${hasMedia ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;">📸 Media evidence attached — click to view</div>` : ''}
                         </div>
                     `}).join('');
                 } else {
@@ -367,7 +642,7 @@
                 const priority = incident.priority_level || 'LOW';
                 const priorityScore = Math.round(incident.final_priority || 0);
                 const reportedBy = incident.requestor_id === currentUser.user_id ? 'You' : 'Another User';
-                const hasVideo = incident.video_url && incident.video_url !== '';
+                const hasMedia = incident.video_url && incident.video_url !== '';
                 const idStr = String(incident.request_id);
                 return `
                 <div class="incident-card" style="border-left-color: ${getPriorityColor(priority)}" onclick='showIncidentDetailsFallback(${JSON.stringify(incident).replace(/'/g, "&#39;")})'>
@@ -381,7 +656,7 @@
                     <div>⏱️ ${new Date(incident.created_at).toLocaleString()}</div>
                     <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                     ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
-                    ${hasVideo ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;"><i class="fas fa-video"></i> 📹 Video evidence attached - Click to view</div>` : ''}
+                    ${hasMedia ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;">📸 Media evidence attached — click to view</div>` : ''}
                 </div>
             `}).join('');
         }
@@ -462,7 +737,7 @@
             const priority = incident.priority_level || 'LOW';
             const priorityScore = Math.round(incident.priority_score || 0);
             const breakdown = incident.breakdown || {};
-            const hasVideo = incident.video_url && incident.video_url !== '';
+            const hasMedia = incident.video_url && incident.video_url !== '';
             
             document.getElementById('modalTitle').innerHTML = `🚨 ${incident.type} Incident`;
             document.getElementById('modalBody').innerHTML = `
@@ -495,41 +770,39 @@
                     <div class="detail-label">Status</div>
                     <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                 </div>
-                ${hasVideo ? `
+                ${hasMedia ? `
                 <div class="detail-row">
-                    <div class="detail-label">Video Evidence</div>
-                    <div class="detail-value">
-                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
-                            <div class="video-thumb">
-                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover;">
-                                <div class="play-icon"><i class="fas fa-play"></i></div>
-                            </div>
-                            <video style="display:none; width:100%; max-height:300px;" controls>
-                                <source src="${incident.video_url}" type="video/mp4">
-                            </video>
-                        </div>
-                    </div>
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value">${renderMediaElement(incident.video_url)}</div>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value" style="color:#94a3b8;">No media uploaded</div>
+                </div>
+                `}
             `;
             document.getElementById('incidentModal').style.display = 'flex';
         };
         
-        window.playVideo = function(container, videoUrl) {
-            const thumb = container.querySelector('.video-thumb');
-            const video = container.querySelector('video');
-            if (thumb && video) {
-                thumb.style.display = 'none';
-                video.style.display = 'block';
-                video.play();
-            }
-        };
-        
+        /* ⭐ FIXED: map click no longer silently overwrites GPS */
         function initMap() {
             map = L.map('requesterMap').setView([27.7172, 85.3240], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
             
             map.on('click', async function(e) {
+                if (locationSource === 'gps') {
+                    const ok = confirm(
+                        'You already set your location with GPS.\n\n' +
+                        'Clicking the map replaces it with a lower-precision map-click ' +
+                        'coordinate (±100–500 m).\n\n' +
+                        'Replace GPS with map-click location?'
+                    );
+                    if (!ok) return;
+                }
+                locationSource = 'click';
+                selectedAccuracy = null;
+
                 selectedLat = e.latlng.lat;
                 selectedLng = e.latlng.lng;
                 if (marker) map.removeLayer(marker);
@@ -591,8 +864,16 @@
                     if (provinceValue) displayParts.push(provinceValue);
                     
                     const displayAddress = displayParts.join(', ') || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+                    let sourceTag;
+                    if (locationSource === 'gps' && selectedAccuracy != null) {
+                        sourceTag = ` <span style="color:#059669; font-weight:600;">[GPS ✓ ±${selectedAccuracy.toFixed(0)} m]</span>`;
+                    } else {
+                        sourceTag = ` <span style="color:#dc2626; font-weight:600;">[map click ⚠️ ±100–500 m]</span>`;
+                    }
+
                     document.getElementById('selectedLocationDisplay').style.display = 'block';
-                    document.getElementById('selectedLocationDisplay').innerHTML = `📍 <strong>Selected:</strong> ${displayAddress}`;
+                    document.getElementById('selectedLocationDisplay').innerHTML = `📍 <strong>Selected:</strong> ${displayAddress}${sourceTag}`;
                     hintDiv.innerHTML = '✅ Address auto-filled! You can edit if needed.';
                     hintDiv.style.color = '#10b981';
                     setTimeout(() => { hintDiv.style.display = 'none'; }, 3000);
@@ -619,16 +900,27 @@
                     async function(position) {
                         const lat = position.coords.latitude;
                         const lng = position.coords.longitude;
+                        const accuracyM = position.coords.accuracy || 0;
+
                         map.setView([lat, lng], 16);
                         if (locationMarker) map.removeLayer(locationMarker);
                         locationMarker = L.marker([lat, lng], {
                             icon: L.divIcon({ className: 'current-location-marker', html: '📍', iconSize: [20, 20] })
                         }).addTo(map).bindPopup('📍 Your Current Location').openPopup();
+
                         selectedLat = lat;
                         selectedLng = lng;
+                        locationSource = 'gps';
+                        selectedAccuracy = accuracyM;
+
                         if (marker) map.removeLayer(marker);
                         marker = L.marker([lat, lng]).addTo(map).bindPopup('📍 Selected Location').openPopup();
                         document.getElementById('selectedCoords').innerHTML = `<input type="hidden" id="lat" value="${lat}"><input type="hidden" id="lng" value="${lng}">`;
+
+                        document.getElementById('selectedLocationDisplay').style.display = 'block';
+                        document.getElementById('selectedLocationDisplay').innerHTML =
+                            `📍 <strong>GPS location set</strong> — accuracy ±${accuracyM.toFixed(0)} m`;
+
                         await reverseGeocodeAndFill(lat, lng);
                         btn.innerHTML = '📍 My Location';
                         btn.disabled = false;
@@ -644,7 +936,7 @@
                         btn.innerHTML = '📍 My Location';
                         btn.disabled = false;
                     },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                 );
             } else {
                 alert('Geolocation is not supported by your browser');
@@ -657,7 +949,7 @@
             const priority = incident.priority_level || 'LOW';
             const priorityScore = Math.round(incident.priority_score || 0);
             const breakdown = incident.breakdown || {};
-            const hasVideo = incident.video_url && incident.video_url !== '';
+            const hasMedia = incident.video_url && incident.video_url !== '';
             
             document.getElementById('modalTitle').innerHTML = `🚨 ${incident.type} Incident`;
             document.getElementById('modalBody').innerHTML = `
@@ -690,23 +982,17 @@
                     <div class="detail-label">Status</div>
                     <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                 </div>
-                ${hasVideo ? `
+                ${hasMedia ? `
                 <div class="detail-row">
-                    <div class="detail-label">Video Evidence</div>
-                    <div class="detail-value">
-                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
-                            <div class="video-thumb">
-                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover; border-radius:12px;">
-                                <div class="play-icon"><i class="fas fa-play"></i></div>
-                            </div>
-                            <video style="display:none; width:100%; max-height:300px; border-radius:12px;" controls>
-                                <source src="${incident.video_url}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                    </div>
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value">${renderMediaElement(incident.video_url)}</div>
                 </div>
-                ` : '<div class="detail-row"><div class="detail-label">Video Evidence</div><div class="detail-value">No video uploaded</div></div>'}
+                ` : `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value" style="color:#94a3b8;">No media uploaded</div>
+                </div>
+                `}
             `;
             document.getElementById('incidentModal').style.display = 'flex';
         };
@@ -714,7 +1000,7 @@
         window.showIncidentDetailsFallback = function(incident) {
             const priority = incident.priority_level || 'LOW';
             const priorityScore = Math.round(incident.final_priority || 0);
-            const hasVideo = incident.video_url && incident.video_url !== '';
+            const hasMedia = incident.video_url && incident.video_url !== '';
             
             document.getElementById('modalTitle').innerHTML = `🚨 ${incident.emergency_type} Incident`;
             document.getElementById('modalBody').innerHTML = `
@@ -738,27 +1024,24 @@
                     <div class="detail-label">Status</div>
                     <div class="detail-value"><span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                 </div>
-                ${hasVideo ? `
+                ${hasMedia ? `
                 <div class="detail-row">
-                    <div class="detail-label">Video Evidence</div>
-                    <div class="detail-value">
-                        <div class="video-container" onclick="event.stopPropagation(); playVideo(this, '${incident.video_url}')">
-                            <div class="video-thumb">
-                                <img src="https://img.icons8.com/color/96/000000/video-playlist.png" style="width:100%; max-height:200px; object-fit:cover; border-radius:12px;">
-                                <div class="play-icon"><i class="fas fa-play"></i></div>
-                            </div>
-                            <video style="display:none; width:100%; max-height:300px; border-radius:12px;" controls>
-                                <source src="${incident.video_url}" type="video/mp4">
-                            </video>
-                        </div>
-                    </div>
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value">${renderMediaElement(incident.video_url)}</div>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value" style="color:#94a3b8;">No media uploaded</div>
+                </div>
+                `}
             `;
             document.getElementById('incidentModal').style.display = 'flex';
         };
         
         window.closeModal = function() {
+            const videos = document.querySelectorAll('#modalBody video');
+            videos.forEach(v => { try { v.pause(); } catch(e){} });
             document.getElementById('incidentModal').style.display = 'none';
         };
         
@@ -774,20 +1057,23 @@
             const q2 = parseInt(document.querySelector('input[name="q2"]:checked')?.value || 0);
             const q3 = parseInt(document.querySelector('input[name="q3"]:checked')?.value || 0);
             
-            let videoUrl = null;
-            const videoFile = document.getElementById('videoUpload').files[0];
-            if (videoFile) {
-                if (videoFile.size > 50 * 1024 * 1024) {
-                    alert('Video too large! Maximum 50MB.');
+            let mediaUrl = null;
+            const mediaFile = document.getElementById('videoUpload').files[0];
+            if (mediaFile) {
+                if (mediaFile.size > 50 * 1024 * 1024) {
+                    alert('Media file too large! Maximum 50MB.');
                     return;
                 }
-                const fileName = `${currentUser.user_id}_${Date.now()}.mp4`;
+                const fileExt = (mediaFile.name.split('.').pop() || 'bin').toLowerCase();
+                const fileName = `${currentUser.user_id}_${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage
                     .from('emergency-videos')
-                    .upload(fileName, videoFile);
+                    .upload(fileName, mediaFile);
                 if (!uploadError) {
                     const { data: urlData } = supabase.storage.from('emergency-videos').getPublicUrl(fileName);
-                    videoUrl = urlData.publicUrl;
+                    mediaUrl = urlData.publicUrl;
+                } else {
+                    console.warn('Media upload failed:', uploadError.message);
                 }
             }
             
@@ -807,7 +1093,7 @@
                 tole: document.getElementById('tole').value || 'Unknown',
                 latitude: selectedLat,
                 longitude: selectedLng,
-                video_url: videoUrl,
+                video_url: mediaUrl,
                 created_at: clientTimestamp,
                 status: 'pending'
             };
@@ -827,7 +1113,6 @@
             } catch (error) {
                 console.error('API error, using fallback:', error);
 
-                // 🔧 Compute human harm locally so the row is stored with correct fields
                 const humanHarm = (q1 + q2 + q3) / 3;
 
                 const { error: insertError } = await supabase
@@ -849,7 +1134,7 @@
                         tole: incidentData.tole,
                         latitude: selectedLat,
                         longitude: selectedLng,
-                        video_url: videoUrl,
+                        video_url: mediaUrl,
                         created_at: clientTimestamp,
                         status: 'pending'
                     });
@@ -869,14 +1154,13 @@
             document.getElementById('selectedLocationDisplay').style.display = 'none';
             selectedLat = null;
             selectedLng = null;
+            locationSource = null;
+            selectedAccuracy = null;
             
             await loadAllIncidents();
             await loadAllIncidentsForSearch();
         });
         
-        // ============================================================
-        // FIXED deleteIncident - verifies deletion actually happened
-        // ============================================================
         window.deleteIncident = async (id) => {
             if (!confirm('Are you sure you want to delete your incident?')) return;
 
@@ -928,6 +1212,15 @@
                 default: return '#64748b';
             }
         }
+
+        /* ⭐ Modal close on backdrop / Esc */
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('incidentModal')) closeModal();
+            if (e.target === document.getElementById('profileModal')) closeProfileModal();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closeModal(); closeProfileModal(); }
+        });
         
         checkAuth();
         setTimeout(() => { if (typeof L !== 'undefined') initMap(); }, 500);

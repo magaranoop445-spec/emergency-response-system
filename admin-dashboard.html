@@ -9,7 +9,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a2c3e; }
-        
+
         .navbar { background: white; padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
         .logo { display: flex; align-items: center; gap: 10px; }
         .logo-icon { font-size: 1.8rem; }
@@ -18,30 +18,123 @@
         .user-name { font-weight: 700; }
         .user-role { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
         .logout-btn { background: #dc2626; color: white; border: none; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; }
-        
+
+        /* ⭐ Avatar */
+        .avatar-wrap { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; flex-shrink: 0; }
+        .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #dc2626; display: block; background: #f1f5f9; }
+        .avatar-empty { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 1.1rem; background: #f8fafc; transition: all 0.2s; }
+        .avatar-wrap:hover .avatar-empty { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+        .avatar-wrap:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay { position: absolute; inset: 0; border-radius: 50%; background: rgba(0,0,0,0.55); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+
         .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
         .admin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
         .full-width { grid-column: span 2; }
-        
+
         .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .card h3 { font-size: 1.1rem; margin-bottom: 1rem; border-left: 3px solid #dc2626; padding-left: 0.8rem; }
-        
+
         .provider-list, .user-list, .incident-list { max-height: 400px; overflow-y: auto; }
-        .provider-card, .user-card, .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid #dc2626; }
-        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
-        
+        .provider-card, .user-card, .incident-card { background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 0.8rem; border-left: 4px solid #dc2626; transition: all 0.2s; }
+        .incident-card.clickable { cursor: pointer; }
+        .incident-card.clickable:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 8px; }
+
+        .priority-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .priority-CRITICAL { background: #dc2626; color: white; }
+        .priority-HIGH { background: #f97316; color: white; }
+        .priority-MEDIUM { background: #eab308; }
+        .priority-LOW { background: #22c55e; color: white; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; background: #e2e8f0; }
+
         .btn-verify { background: #10b981; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
         .btn-remove { background: #dc2626; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; margin-left: 0.5rem; }
         .btn-boost { background: #f59e0b; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-        
+        .btn-refresh { background: #3b82f6; color: white; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
         .stat-card { background: #f1f5f9; padding: 1rem; border-radius: 12px; text-align: center; }
         .stat-number { font-size: 1.8rem; font-weight: 800; color: #dc2626; }
         .stat-label { font-size: 0.7rem; color: #64748b; }
-        
+
         .boost-select { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
         textarea { width: 100%; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 0.5rem; }
-        
+
+        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .search-bar input { flex: 1; padding: 0.7rem; border: 2px solid #e2e8f0; border-radius: 12px; transition: border-color 0.2s; }
+        .search-bar input:focus { outline: none; border-color: #dc2626; }
+
+        .hotspot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+        .hotspot-header .hint { font-size: 0.75rem; color: #64748b; }
+        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
+        .searching-hint { text-align: center; padding: 1rem; color: #94a3b8; font-size: 0.85rem; }
+
+        .video-placeholder {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 0.6rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .video-placeholder:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
+
+        .cluster-card { cursor: pointer; }
+        .cluster-card:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 24px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; animation: slideIn 0.3s ease; }
+        .modal-content.wide { max-width: 850px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; background: white; z-index: 1; }
+        .modal-header h2 { font-size: 1.3rem; color: #1e293b; }
+        .close-modal { font-size: 1.8rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; line-height: 1; }
+        .close-modal:hover { color: #dc2626; }
+        .modal-body { padding: 1.5rem; }
+        .detail-row { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #64748b; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .detail-value { font-size: 0.95rem; color: #1e293b; line-height: 1.5; }
+        .priority-tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+        .media-container { margin-top: 8px; border-radius: 12px; overflow: hidden; background: #000; text-align: center; }
+        .media-container img { max-width: 100%; max-height: 500px; display: block; margin: 0 auto; }
+        .media-container video { width: 100%; max-height: 500px; object-fit: contain; background: #000; display: block; }
+
+        /* ⭐ Cluster incident items are clickable */
+        .cluster-incident-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 0.7rem 0.9rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #dc2626;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cluster-incident-item:hover {
+            background: #e0f2fe;
+            border-left-color: #0284c7;
+            transform: translateX(3px);
+        }
+        .cluster-incident-item .type-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .cluster-incident-item .view-hint { font-size: 0.7rem; color: #0284c7; font-weight: 600; margin-top: 4px; }
+
+        /* ⭐ Profile modal */
+        .profile-modal-content { background: white; border-radius: 24px; width: 90%; max-width: 420px; padding: 2rem; text-align: center; animation: slideIn 0.3s ease; }
+        .profile-modal-content h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1e293b; }
+        .profile-modal-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 1rem auto; border: 4px solid #dc2626; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+        .profile-modal-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-modal-avatar .placeholder { font-size: 3rem; color: #94a3b8; }
+        .profile-modal-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+        .profile-modal-actions button { padding: 0.7rem; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; font-size: 0.88rem; }
+        .btn-upload { background: #dc2626; color: white; }
+        .btn-upload:hover { background: #b91c1c; }
+        .btn-cancel { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0 !important; }
+
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
         @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .stats-grid { grid-template-columns: repeat(2, 1fr); } }
     </style>
 </head>
@@ -49,6 +142,11 @@
     <div class="navbar">
         <div class="logo"><span class="logo-icon">👨‍💼</span><span class="logo-text">Admin Dashboard</span></div>
         <div class="user-info">
+            <!-- ⭐ Avatar -->
+            <div class="avatar-wrap" onclick="openProfileModal()" title="Click to update profile picture">
+                <div id="navbarAvatar"></div>
+                <div class="avatar-overlay"><i class="fas fa-camera"></i></div>
+            </div>
             <div><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">Administrator</div></div>
             <button onclick="logout()" class="logout-btn">Logout</button>
         </div>
@@ -65,17 +163,17 @@
         <div class="admin-grid">
             <div class="card">
                 <h3>✅ Verify Service Providers</h3>
-                <div id="pendingProvidersList" class="provider-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+                <div id="pendingProvidersList" class="provider-list"><div class="empty-state">Loading...</div></div>
             </div>
 
             <div class="card">
                 <h3>👥 Manage Users</h3>
-                <div id="usersList" class="user-list"><div class="empty-state" style="text-align:center; padding:2rem">Loading...</div></div>
+                <div id="usersList" class="user-list"><div class="empty-state">Loading...</div></div>
             </div>
 
             <div class="card">
-                <h3>🎥 Video Evidence Review</h3>
-                <div id="videoReviewList" class="incident-list"><div class="empty-state" style="text-align:center; padding:2rem">No videos pending</div></div>
+                <h3>📸 Media Evidence Review</h3>
+                <div id="videoReviewList" class="incident-list"><div class="empty-state">No media pending</div></div>
             </div>
 
             <div class="card">
@@ -83,6 +181,96 @@
                 <select id="boostIncidentSelect" class="boost-select"><option value="">Select incident to boost</option></select>
                 <textarea id="boostReason" rows="2" placeholder="Reason for priority boost..."></textarea>
                 <button onclick="applyPriorityBoost()" class="btn-boost">Apply Priority Boost</button>
+            </div>
+
+            <div class="card">
+                <div class="hotspot-header">
+                    <h3 style="margin-bottom:0; border-left: 3px solid #dc2626; padding-left: 0.8rem;">🔥 Hotspot Detection (DBSCAN)</h3>
+                    <button onclick="loadHotspots()" class="btn-refresh">🔄 Refresh</button>
+                </div>
+                <div class="hotspot-header" style="margin-top:0.5rem;">
+                    <span class="hint">Geographic clustering (ε ≈ 8.9 km, min 3 points) — click cluster or incident for details</span>
+                </div>
+                <div id="hotspotsContainer" class="incident-list">
+                    <div class="empty-state">Loading clusters...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔍 Advanced Search (Inverted Index + TF-IDF — live results)</h3>
+                <div class="search-bar">
+                    <input type="text" id="adminSearchQuery"
+                           placeholder="Type to search — results appear automatically..."
+                           oninput="debouncedAdminSearch()"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault(); adminSearch();}">
+                    <button onclick="adminSearch()" class="btn-verify">Search</button>
+                </div>
+                <div id="adminSearchResults" class="incident-list">
+                    <div class="empty-state">Start typing to search…</div>
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <div class="hotspot-header">
+                    <h3 style="margin-bottom:0; border-left: 3px solid #dc2626; padding-left: 0.8rem;">📋 All Incident Reports</h3>
+                    <button onclick="loadAllIncidents()" class="btn-refresh">🔄 Refresh</button>
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; margin: 0.5rem 0 1rem 0;">
+                    Every incident across the system — click any card for full details, media evidence, and priority breakdown
+                </div>
+                <div id="allIncidentsList" class="incident-list" style="max-height: 600px;">
+                    <div class="empty-state">Loading incidents...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="incidentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Incident Details</h2>
+                <span class="close-modal" onclick="closeIncidentModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <div id="videoModal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2 id="videoModalTitle">Media Evidence</h2>
+                <span class="close-modal" onclick="closeVideoModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="videoModalBody"></div>
+        </div>
+    </div>
+
+    <div id="clusterModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="clusterModalTitle">Cluster Details</h2>
+                <span class="close-modal" onclick="closeClusterModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="clusterModalBody"></div>
+        </div>
+    </div>
+
+    <!-- ⭐ Profile Picture Modal -->
+    <div id="profileModal" class="modal">
+        <div class="profile-modal-content">
+            <h2>Your Profile Picture</h2>
+            <div class="profile-modal-avatar" id="profileModalAvatar">
+                <span class="placeholder">📷</span>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:0.8rem;">
+                This is optional. You can use the dashboard without a profile picture.
+            </div>
+            <input type="file" id="profileModalInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleProfileModalFile(event)">
+            <div class="profile-modal-actions">
+                <button class="btn-upload" id="profileModalUploadBtn" onclick="document.getElementById('profileModalInput').click()">
+                    <i class="fas fa-upload"></i> <span id="profileModalUploadText">Upload Picture</span>
+                </button>
+                <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -92,9 +280,133 @@
         const SUPABASE_URL = 'https://xcylyhjslxvhwpgjnfje.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
+
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : 'https://emergency-response-system-liard.vercel.app';
+
         let currentUser = null;
 
+        /* ⭐ Profile pic state */
+        let profilePicUrl = null;
+        let pendingProfileFile = null;
+
+        /* ============================ AVATAR ============================ */
+        function renderNavbarAvatar(url) {
+            profilePicUrl = url;
+            const wrap = document.getElementById('navbarAvatar');
+            if (!wrap) return;
+            if (url) {
+                wrap.innerHTML = `<img class="avatar-img" src="${url}" alt="Profile" onerror="this.style.display='none';this.parentElement.innerHTML='<div class=\\'avatar-empty\\'><i class=\\'fas fa-user\\'></i></div>'">`;
+            } else {
+                wrap.innerHTML = `<div class="avatar-empty" title="Add a profile picture"><i class="fas fa-camera"></i></div>`;
+            }
+        }
+
+        window.openProfileModal = () => {
+            pendingProfileFile = null;
+            const container = document.getElementById('profileModalAvatar');
+            if (profilePicUrl) {
+                container.innerHTML = `<img src="${profilePicUrl}" alt="Profile">`;
+                document.getElementById('profileModalUploadText').textContent = 'Change Picture';
+            } else {
+                container.innerHTML = `<span class="placeholder">📷</span>`;
+                document.getElementById('profileModalUploadText').textContent = 'Upload Picture';
+            }
+            document.getElementById('profileModalInput').value = '';
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+
+        window.closeProfileModal = () => {
+            document.getElementById('profileModal').style.display = 'none';
+        };
+
+        window.handleProfileModalFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!ALLOWED.includes(file.type)) {
+                alert('Please select a JPG, PNG, GIF or WebP image');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image is too large (max 5MB)');
+                return;
+            }
+
+            pendingProfileFile = file;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profileModalAvatar').innerHTML =
+                    `<img src="${e.target.result}" alt="Preview">`;
+                document.getElementById('profileModalUploadText').textContent = 'Save Picture';
+                document.getElementById('profileModalUploadBtn').onclick = saveProfilePicture;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        async function saveProfilePicture() {
+            if (!pendingProfileFile || !currentUser) return;
+
+            const btn = document.getElementById('profileModalUploadBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const ext = (pendingProfileFile.name.split('.').pop() || 'jpg').toLowerCase();
+                const fileName = `${currentUser.user_id}_${Date.now()}.${ext}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('profile-pictures')
+                    .upload(fileName, pendingProfileFile, {
+                        cacheControl: '3600',
+                        upsert: true,
+                        contentType: pendingProfileFile.type
+                    });
+
+                if (uploadError) {
+                    alert('Upload failed: ' + uploadError.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('profile-pictures')
+                    .getPublicUrl(fileName);
+
+                const publicUrl = urlData?.publicUrl;
+                if (!publicUrl) throw new Error('Could not get public URL');
+
+                const { error: dbError } = await supabase
+                    .from('users')
+                    .update({ profile_picture: publicUrl })
+                    .eq('user_id', currentUser.user_id);
+
+                if (dbError) {
+                    alert('Saved to storage but DB update failed: ' + dbError.message);
+                } else {
+                    alert('✅ Profile picture updated!');
+                    currentUser.profile_picture = publicUrl;
+                    renderNavbarAvatar(publicUrl);
+                }
+
+                closeProfileModal();
+            } catch (err) {
+                console.error('Profile save error:', err);
+                alert('Error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.onclick = () => document.getElementById('profileModalInput').click();
+                pendingProfileFile = null;
+            }
+        }
+
+        /* ============================ AUTH ============================ */
         async function checkAuth() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
@@ -103,27 +415,37 @@
             if (currentUser.role !== 'admin') {
                 if (currentUser.role === 'provider') window.location.href = 'provider-dashboard.html';
                 else window.location.href = 'requester-dashboard.html';
+                return;
             }
             document.getElementById('userName').textContent = currentUser.full_name;
             document.getElementById('userRole').textContent = 'Administrator';
-            await loadPendingProviders();
-            await loadUsers();
-            await loadVideoReviews();
-            await loadBoostSelect();
-            await loadAnalytics();
+
+            // ⭐ Render avatar
+            renderNavbarAvatar(currentUser?.profile_picture || null);
+
+            await Promise.all([
+                loadPendingProviders(),
+                loadUsers(),
+                loadVideoReviews(),
+                loadBoostSelect(),
+                loadAnalytics(),
+                loadHotspots(),
+                loadAllIncidents()
+            ]);
         }
 
+        /* ============================ DATA LOADERS ============================ */
         async function loadPendingProviders() {
             const { data, error } = await supabase.from('providers').select('*, users(full_name, email, phone)').eq('verified_by_admin', false);
             const container = document.getElementById('pendingProvidersList');
             if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No pending provider verifications</div>'; return; }
-            container.innerHTML = data.map(provider => `
+            container.innerHTML = data.map(p => `
                 <div class="provider-card">
-                    <div class="incident-header"><strong>${provider.organization_name}</strong><span>${provider.provider_type}</span></div>
-                    <div>👤 ${provider.users?.full_name || 'N/A'}</div>
-                    <div>📧 ${provider.users?.email || 'N/A'}</div>
-                    <div>📜 License: ${provider.license_number}</div>
-                    <button onclick="verifyProvider('${provider.provider_id}')" class="btn-verify">✓ Verify Provider</button>
+                    <div class="incident-header"><strong>${p.organization_name}</strong><span>${p.provider_type}</span></div>
+                    <div>👤 ${p.users?.full_name || 'N/A'}</div>
+                    <div>📧 ${p.users?.email || 'N/A'}</div>
+                    <div>📜 License: ${p.license_number}</div>
+                    <button onclick="verifyProvider('${p.provider_id}')" class="btn-verify">✓ Verify Provider</button>
                 </div>
             `).join('');
         }
@@ -132,12 +454,12 @@
             const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
             const container = document.getElementById('usersList');
             if (error || !data) { container.innerHTML = '<div class="empty-state">Error loading users</div>'; return; }
-            container.innerHTML = data.filter(u => u.user_id !== currentUser.user_id).map(user => `
+            container.innerHTML = data.filter(u => u.user_id !== currentUser.user_id).map(u => `
                 <div class="user-card">
-                    <div class="incident-header"><strong>${user.full_name}</strong><span class="status-badge">${user.role?.toUpperCase()}</span></div>
-                    <div>📧 ${user.email}</div>
-                    <div>📞 ${user.phone || 'N/A'}</div>
-                    <button onclick="removeUser('${user.user_id}')" class="btn-remove">🗑️ Remove User</button>
+                    <div class="incident-header"><strong>${u.full_name}</strong><span class="status-badge">${u.role?.toUpperCase()}</span></div>
+                    <div>📧 ${u.email}</div>
+                    <div>📞 ${u.phone || 'N/A'}</div>
+                    <button onclick="removeUser('${u.user_id}')" class="btn-remove">🗑️ Remove User</button>
                 </div>
             `).join('');
             document.getElementById('totalUsers').textContent = data.length;
@@ -146,43 +468,454 @@
         async function loadVideoReviews() {
             const { data, error } = await supabase.from('emergency_requests').select('*').not('video_url', 'is', null);
             const container = document.getElementById('videoReviewList');
-            if (error || !data || data.length === 0) { container.innerHTML = '<div class="empty-state">No videos pending review</div>'; return; }
-            container.innerHTML = data.map(incident => `
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state">No media pending review</div>';
+                return;
+            }
+            window.__videoCache = data;
+            container.innerHTML = data.map((incident, idx) => `
                 <div class="incident-card">
                     <div class="incident-header"><strong>${incident.emergency_type}</strong><span>${incident.district}</span></div>
                     <div>📝 ${incident.description?.substring(0, 60)}</div>
-                    <div style="background:#e2e8f0; padding:0.5rem; text-align:center; border-radius:8px; margin-top:8px">🎥 Video evidence recorded</div>
+                    <div class="video-placeholder"
+                         onclick="openMediaModal(window.__videoCache[${idx}].video_url, '${incident.emergency_type} — ${incident.district}')">
+                        📸 Click to view media evidence
+                    </div>
                 </div>
             `).join('');
         }
 
+        window.openMediaModal = (mediaUrl, title) => {
+            if (!mediaUrl) { alert('No media URL'); return; }
+            document.getElementById('videoModalTitle').textContent = title || 'Media Evidence';
+
+            const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(mediaUrl);
+
+            let mediaHtml;
+            if (isImage) {
+                mediaHtml = `<div class="media-container"><img src="${mediaUrl}" alt="Media evidence" /></div>`;
+            } else {
+                mediaHtml = `
+                    <div class="media-container">
+                        <video controls autoplay playsinline>
+                            <source src="${mediaUrl}">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>`;
+            }
+
+            document.getElementById('videoModalBody').innerHTML = mediaHtml;
+            document.getElementById('videoModal').style.display = 'flex';
+        };
+        window.openVideoModal = window.openMediaModal;
+
+        window.closeVideoModal = () => {
+            const media = document.querySelector('#videoModalBody video');
+            if (media) { media.pause(); media.src = ''; }
+            document.getElementById('videoModal').style.display = 'none';
+        };
+
+        window.loadAllIncidents = async () => {
+            const container = document.getElementById('allIncidentsList');
+            container.innerHTML = '<div class="empty-state">Loading incidents...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/api/ranked-incidents`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                if (!data.success || !data.incidents || data.incidents.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No incidents in the system</div>';
+                    return;
+                }
+
+                window.__allIncidentsCache = data.incidents;
+
+                container.innerHTML = data.incidents.map((inc, idx) => {
+                    const priority = inc.priority_level || 'MEDIUM';
+                    const score = Math.round(inc.priority_score || 0);
+                    const hasMedia = inc.video_url && inc.video_url !== '';
+                    return `
+                        <div class="incident-card clickable"
+                             style="border-left-color: ${getPriorityColor(priority)}"
+                             onclick="showIncidentDetails(window.__allIncidentsCache[${idx}])">
+                            <div class="incident-header">
+                                <strong>🚨 ${inc.type}</strong>
+                                <span class="priority-badge priority-${priority}">${priority} (${score})</span>
+                            </div>
+                            <div>📍 ${inc.location || 'N/A'}</div>
+                            <div>📝 ${inc.description?.substring(0, 100) || 'No description'}</div>
+                            <div style="font-size:0.72rem; color:#64748b; margin-top:4px;">
+                                Status: <span class="status-badge status-${inc.status}">${inc.status?.toUpperCase() || 'PENDING'}</span>
+                                · ${new Date(inc.created_at).toLocaleString()}
+                            </div>
+                            ${hasMedia ? `<div style="margin-top:6px; font-size:0.72rem; color:#3b82f6; font-weight:600;">📸 Has media evidence — click to view</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('All incidents error:', err);
+                container.innerHTML = `<div class="empty-state">⚠️ Failed to load incidents<br><span style="font-size:0.72rem;">${err.message}</span></div>`;
+            }
+        };
+
+        window.showIncidentDetails = (inc) => {
+            const priority = inc.priority_level || 'MEDIUM';
+            const score = Math.round(inc.priority_score || 0);
+            const hasMedia = inc.video_url && inc.video_url !== '';
+            const bd = inc.breakdown || {};
+
+            document.getElementById('modalTitle').innerHTML = `🚨 ${inc.type} Incident`;
+
+            document.getElementById('modalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Weighted Priority Score</div>
+                    <div class="detail-value">
+                        <span class="priority-tag priority-${priority}">${priority}</span>
+                        &nbsp;(${score}/100)
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Priority Breakdown</div>
+                    <div class="detail-value">
+                        • Human Harm (55%): ${Math.round(bd.humanHarm || 0)}%<br>
+                        • Time Decay (20%): ${Math.round(bd.timeDecay || 0)}%<br>
+                        • Proximity (20%): ${Math.round(bd.proximity || 0)}%<br>
+                        • Admin Boost (5%): ${Math.round(bd.adminBoost || 0)}%
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${inc.location || 'N/A'}</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${inc.description || 'No description'}</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Reported On</div>
+                    <div class="detail-value">${new Date(inc.created_at).toLocaleString()}</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value"><span class="status-badge status-${inc.status}">${inc.status?.toUpperCase() || 'PENDING'}</span></div>
+                </div>
+
+                ${hasMedia ? `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value">
+                        <div class="video-placeholder"
+                             onclick="event.stopPropagation(); closeIncidentModal(); openMediaModal('${inc.video_url}', '${inc.type} — ${inc.location}')">
+                            📸 Click to view media evidence
+                        </div>
+                    </div>
+                </div>
+                ` : `
+                <div class="detail-row">
+                    <div class="detail-label">Media Evidence</div>
+                    <div class="detail-value" style="color:#94a3b8;">No media uploaded</div>
+                </div>
+                `}
+            `;
+
+            document.getElementById('incidentModal').style.display = 'flex';
+        };
+
+        window.closeIncidentModal = () => {
+            document.getElementById('incidentModal').style.display = 'none';
+        };
+
+        window.showClusterIncidentDetail = async (requestId) => {
+            closeClusterModal();
+
+            const cached = (window.__allIncidentsCache || []).find(i => String(i.id) === String(requestId));
+            if (cached) {
+                showIncidentDetails(cached);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/incident/${requestId}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data.success || !data.incident) throw new Error('Incident not found');
+
+                const inc = data.incident;
+                const ranking = data.ranking || {};
+                const bd = ranking.breakdown || {};
+
+                const transformed = {
+                    id: inc.request_id,
+                    type: inc.emergency_type,
+                    priority_level: inc.priority_level || ranking.priority || 'MEDIUM',
+                    priority_score: ranking.total || inc.final_priority || 0,
+                    breakdown: bd,
+                    location: `${inc.district || ''}, ${inc.municipality || ''}`,
+                    description: inc.description,
+                    created_at: inc.created_at,
+                    status: inc.status,
+                    video_url: inc.video_url
+                };
+
+                showIncidentDetails(transformed);
+            } catch (err) {
+                console.error('Cluster incident detail error:', err);
+                alert('Could not load incident details: ' + err.message);
+            }
+        };
+
+        window.loadHotspots = async () => {
+            const container = document.getElementById('hotspotsContainer');
+            container.innerHTML = '<div class="empty-state">🔄 Running DBSCAN clustering...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/api/clusters`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Server returned failure');
+
+                if (!data.clusters || data.clusters.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div style="font-size:1.5rem; margin-bottom:0.5rem;">📍</div>
+                            <strong>No significant clusters detected</strong>
+                            <div style="font-size:0.75rem; margin-top:0.3rem;">
+                                ${data.noise_count || 0} incident(s) classified as noise (isolated)
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                window.__clustersCache = data.clusters;
+                window.__resourceSuggestions = data.resource_suggestions || [];
+
+                container.innerHTML = data.clusters.map((c, idx) => `
+                    <div class="incident-card cluster-card" style="border-left-color:${getPriorityColor(c.priority)}"
+                         onclick="showClusterDetails(${idx})">
+                        <div class="incident-header">
+                            <strong>🔥 Cluster #${c.id + 1}</strong>
+                            <span class="priority-badge priority-${c.priority}">${c.priority}</span>
+                        </div>
+                        <div style="font-size:0.85rem; margin-top:6px;">
+                            <div>📊 <strong>${c.size}</strong> incidents clustered</div>
+                            <div>⚠️ Avg severity: <strong>${c.severity.toFixed(1)}/10</strong></div>
+                            <div>📋 Types: ${c.types.join(', ')}</div>
+                            <div>📍 Center: ${c.center.lat.toFixed(4)}, ${c.center.lng.toFixed(4)}</div>
+                            <div style="font-size:0.72rem; color:#3b82f6; font-weight:600; margin-top:6px;">
+                                🔍 Click for detailed breakdown
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.innerHTML += `
+                    <div style="text-align:center; padding:0.6rem; font-size:0.72rem; color:#64748b; border-top:1px dashed #e2e8f0; margin-top:0.5rem;">
+                        ${data.total_clusters} cluster(s) · ${data.noise_count} noise point(s) · ${data.hotspots?.length || 0} hotspot(s) above severity threshold
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Hotspot error:', err);
+                container.innerHTML = `<div class="empty-state">⚠️ Could not load hotspots<br><span style="font-size:0.72rem;">${err.message}</span></div>`;
+            }
+        };
+
+        window.showClusterDetails = (idx) => {
+            const c = window.__clustersCache?.[idx];
+            if (!c) return;
+
+            const suggestion = window.__resourceSuggestions?.find(s => s.clusterId === c.id);
+
+            document.getElementById('clusterModalTitle').innerHTML = `🔥 Cluster #${c.id + 1} — Detailed Overview`;
+
+            const incidents = c.incidents || [];
+
+            document.getElementById('clusterModalBody').innerHTML = `
+                <div class="detail-row">
+                    <div class="detail-label">Cluster Priority</div>
+                    <div class="detail-value">
+                        <span class="priority-tag priority-${c.priority}">${c.priority}</span>
+                        &nbsp;· ${c.size} incidents
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Geographic Center</div>
+                    <div class="detail-value">
+                        ${c.center.lat.toFixed(5)}, ${c.center.lng.toFixed(5)}<br>
+                        <a href="https://www.openstreetmap.org/?mlat=${c.center.lat}&mlon=${c.center.lng}#map=15/${c.center.lat}/${c.center.lng}"
+                           target="_blank" style="color:#3b82f6; font-size:0.8rem;">View on OpenStreetMap →</a>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Severity Analysis</div>
+                    <div class="detail-value">
+                        ⚠️ Average: <strong>${c.severity.toFixed(2)}/10</strong><br>
+                        📋 Emergency types: ${c.types.join(', ')}
+                    </div>
+                </div>
+
+                ${suggestion ? `
+                <div class="detail-row">
+                    <div class="detail-label">Suggested Response</div>
+                    <div class="detail-value">
+                        🚒 <strong>${suggestion.suggestedUnits} unit(s)</strong> recommended<br>
+                        ⏱️ Response time: <strong>${suggestion.responseTime.replace(/_/g, ' ')}</strong><br>
+                        📏 Coverage radius: ~${suggestion.radius.toFixed(1)} km
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="detail-row">
+                    <div class="detail-label">Incidents in Cluster (${incidents.length}) — click any for full details</div>
+                    <div class="detail-value">
+                        ${incidents.length === 0 ? '<div style="color:#94a3b8;">No incident details available</div>' :
+                            incidents.map(i => `
+                                <div class="cluster-incident-item"
+                                     onclick="event.stopPropagation(); showClusterIncidentDetail('${i.request_id}')">
+                                    <div class="type-row">
+                                        <strong>🚨 ${i.emergency_type}</strong>
+                                        <span class="priority-badge priority-${i.priority_level || 'MEDIUM'}"
+                                              style="font-size:0.65rem; padding:0.15rem 0.5rem;">
+                                            ${i.priority_level || 'MEDIUM'}
+                                        </span>
+                                    </div>
+                                    <div style="font-size:0.78rem; color:#475569;">
+                                        📍 ${Number(i.latitude).toFixed(4)}, ${Number(i.longitude).toFixed(4)}
+                                    </div>
+                                    ${i.description ? `<div style="font-size:0.78rem; color:#64748b; margin-top:2px;">${i.description.substring(0, 90)}${i.description.length > 90 ? '...' : ''}</div>` : ''}
+                                    <div class="view-hint">👁️ Click to view full details →</div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('clusterModal').style.display = 'flex';
+        };
+
+        window.closeClusterModal = () => {
+            document.getElementById('clusterModal').style.display = 'none';
+        };
+
+        /* ⭐ REAL-TIME SEARCH */
+        let adminSearchDebounceTimer = null;
+
+        window.debouncedAdminSearch = () => {
+            clearTimeout(adminSearchDebounceTimer);
+            const q = document.getElementById('adminSearchQuery').value.trim();
+
+            if (!q) {
+                document.getElementById('adminSearchResults').innerHTML =
+                    '<div class="empty-state">Start typing to search…</div>';
+                return;
+            }
+
+            document.getElementById('adminSearchResults').innerHTML =
+                '<div class="searching-hint">⏳ Searching…</div>';
+
+            adminSearchDebounceTimer = setTimeout(() => {
+                adminSearch();
+            }, 300);
+        };
+
+        window.adminSearch = async () => {
+            const q = document.getElementById('adminSearchQuery').value.trim();
+            const container = document.getElementById('adminSearchResults');
+
+            if (!q) {
+                container.innerHTML = '<div class="empty-state">Start typing to search…</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="searching-hint">🔍 Searching inverted index…</div>';
+
+            try {
+                const res = await fetch(`${API_URL}/api/search?q=${encodeURIComponent(q)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || 'Server returned failure');
+
+                if (!data.results || data.results.length === 0) {
+                    container.innerHTML = `<div class="empty-state"><strong>No matches for "${q}"</strong></div>`;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div style="font-size:0.72rem; color:#64748b; margin-bottom:0.6rem;">
+                        ${data.count} result(s) for "<strong>${q}</strong>" — ranked by TF-IDF
+                    </div>
+                ` + data.results.map(r => `
+                    <div class="incident-card" style="border-left-color:#3b82f6">
+                        <div class="incident-header">
+                            <strong>${r.type}</strong>
+                            <span style="font-size:0.7rem; color:#3b82f6; font-weight:600;">Score: ${r.relevance_score.toFixed(2)}</span>
+                        </div>
+                        <div>📍 ${r.location}</div>
+                        <div>📝 ${r.description?.substring(0, 100) || ''}</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:4px;">
+                            Status: ${r.status?.toUpperCase() || 'PENDING'}
+                            ${r.priority ? ' · Priority: ' + r.priority : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Search error:', err);
+                container.innerHTML = `<div class="empty-state">⚠️ Search failed<br><span style="font-size:0.72rem;">${err.message}</span></div>`;
+            }
+        };
+
         async function loadBoostSelect() {
             const { data } = await supabase.from('emergency_requests').select('request_id, emergency_type, district, priority_level').not('status', 'eq', 'completed');
             const select = document.getElementById('boostIncidentSelect');
-            select.innerHTML = '<option value="">Select incident to boost</option>' + (data || []).map(i => `<option value="${i.request_id}">${i.emergency_type} - ${i.district} (${i.priority_level || 'MEDIUM'})</option>`).join('');
+            select.innerHTML = '<option value="">Select incident to boost</option>' + (data || []).map(i =>
+                `<option value="${i.request_id}">${i.emergency_type} - ${i.district} (${i.priority_level || 'MEDIUM'})</option>`
+            ).join('');
         }
 
         async function loadAnalytics() {
-            const { count: total } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true });
-            const { count: active } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true }).not('status', 'eq', 'completed');
-            const { count: verified } = await supabase.from('providers').select('count', { count: 'exact', head: true }).eq('verified_by_admin', true);
-            document.getElementById('totalIncidents').textContent = total || 0;
-            document.getElementById('activeIncidents').textContent = active || 0;
-            document.getElementById('verifiedProviders').textContent = verified || 0;
+            try {
+                const res = await fetch(`${API_URL}/api/analytics`);
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('totalIncidents').textContent = data.total_incidents || 0;
+                    document.getElementById('activeIncidents').textContent = data.active_incidents || 0;
+                    document.getElementById('verifiedProviders').textContent = data.verified_providers_count ?? '—';
+                } else {
+                    throw new Error('Analytics returned failure');
+                }
+            } catch (err) {
+                console.warn('Analytics API failed, using Supabase fallback:', err);
+                const { count: total } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true });
+                const { count: active } = await supabase.from('emergency_requests').select('count', { count: 'exact', head: true }).not('status', 'eq', 'completed');
+                document.getElementById('totalIncidents').textContent = total || 0;
+                document.getElementById('activeIncidents').textContent = active || 0;
+                document.getElementById('verifiedProviders').textContent = '—';
+            }
         }
 
         window.verifyProvider = async (id) => {
-            const { error } = await supabase.from('providers').update({ verified_by_admin: true, verified_at: new Date(), verified_by: currentUser.user_id }).eq('provider_id', id);
+            const { error } = await supabase.from('providers').update({
+                verified_by_admin: true, verified_at: new Date(), verified_by: currentUser.user_id
+            }).eq('provider_id', id);
             if (error) alert('Error: ' + error.message);
             else { alert('Provider verified!'); await loadPendingProviders(); await loadUsers(); await loadAnalytics(); }
         };
 
         window.removeUser = async (id) => {
-            if (confirm('Are you sure you want to remove this user? This will delete all their incidents.')) {
+            if (confirm('Are you sure you want to remove this user? This will also delete all their incidents.')) {
                 await supabase.from('emergency_requests').delete().eq('requestor_id', id);
                 const { error } = await supabase.from('users').delete().eq('user_id', id);
                 if (error) alert('Error: ' + error.message);
-                else { alert('User removed'); await loadUsers(); await loadAnalytics(); }
+                else { alert('User removed'); await loadUsers(); await loadAnalytics(); await loadAllIncidents(); }
             }
         };
 
@@ -198,11 +931,32 @@
                 await supabase.from('admin_boosts').insert({ request_id: id, admin_id: currentUser.user_id, boost_percentage: 5, reason });
                 alert('Priority boost applied!');
                 await loadBoostSelect();
+                await loadHotspots();
+                await loadAllIncidents();
             }
         };
 
         window.logout = async () => { await supabase.auth.signOut(); window.location.href = 'index.html'; };
-        
+
+        function getPriorityColor(p) {
+            switch (p) {
+                case 'CRITICAL': return '#dc2626';
+                case 'HIGH': return '#f97316';
+                case 'MEDIUM': return '#eab308';
+                default: return '#22c55e';
+            }
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('incidentModal')) closeIncidentModal();
+            if (e.target === document.getElementById('videoModal')) closeVideoModal();
+            if (e.target === document.getElementById('clusterModal')) closeClusterModal();
+            if (e.target === document.getElementById('profileModal')) closeProfileModal();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closeIncidentModal(); closeVideoModal(); closeClusterModal(); closeProfileModal(); }
+        });
+
         checkAuth();
     </script>
 </body>

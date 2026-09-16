@@ -143,8 +143,11 @@ class RankingAlgorithm {
     updateWeights(w) { this.weights = { ...this.weights, ...w }; }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DBSCANClusterer — FIXED
+// ═══════════════════════════════════════════════════════════════════════════
 class DBSCANClusterer {
-    constructor(epsilon = 0.02, minPoints = 3) {
+    constructor(epsilon = 0.08, minPoints = 3) {
         this.epsilon = epsilon;
         this.minPoints = minPoints;
     }
@@ -159,14 +162,17 @@ class DBSCANClusterer {
     }
     toRadians(d) { return d * Math.PI / 180; }
     distance(p1, p2) { return this.haversineDistance(p1, p2); }
-    regionQuery(points, idx, visited) {
+
+    regionQuery(points, idx) {
         const neighbors = [];
         const p = points[idx];
+        const radiusKm = this.epsilon * 111;
         for (let i = 0; i < points.length; i++) {
-            if (!visited.has(i) && this.distance(p, points[i]) <= this.epsilon * 111) neighbors.push(i);
+            if (this.distance(p, points[i]) <= radiusKm) neighbors.push(i);
         }
         return neighbors;
     }
+
     expandCluster(points, idx, neighbors, clusterId, labels, visited) {
         labels[idx] = clusterId;
         let i = 0;
@@ -174,7 +180,7 @@ class DBSCANClusterer {
             const cur = neighbors[i];
             if (!visited.has(cur)) {
                 visited.add(cur);
-                const curN = this.regionQuery(points, cur, visited);
+                const curN = this.regionQuery(points, cur);
                 if (curN.length >= this.minPoints) {
                     for (const n of curN) if (!neighbors.includes(n)) neighbors.push(n);
                 }
@@ -183,6 +189,7 @@ class DBSCANClusterer {
             i++;
         }
     }
+
     cluster(incidents) {
         if (!incidents || incidents.length === 0) return { clusters: [], noise: [], totalClusters: 0 };
         const withCoords = incidents.filter(i => i.latitude && i.longitude && !isNaN(i.latitude) && !isNaN(i.longitude));
@@ -195,7 +202,7 @@ class DBSCANClusterer {
         for (let i = 0; i < n; i++) {
             if (!visited.has(i)) {
                 visited.add(i);
-                const neighbors = this.regionQuery(points, i, visited);
+                const neighbors = this.regionQuery(points, i);
                 if (neighbors.length < this.minPoints) labels[i] = -1;
                 else { this.expandCluster(points, i, neighbors, clusterId, labels, visited); clusterId++; }
             }
@@ -309,30 +316,25 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Supabase configuration
 const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://xcylyhjslxvhwpgjnfje.supabase.co';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_4_yCpW7k13dtfpP-AIsFmQ_NCQXtQdE';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Initialize algorithm modules
 const invertedIndex = new InvertedIndex();
 const rankingAlgo = new RankingAlgorithm();
-const clusterer = new DBSCANClusterer(0.02, 3);
+const clusterer = new DBSCANClusterer(0.08, 3);
 const priorityQueue = new PriorityQueue();
 
-// Cache for incidents
 let cachedIncidents = [];
 let lastCacheUpdate = null;
 const CACHE_TTL = 60000;
-
-// ==================== HELPER FUNCTIONS ====================
 
 async function loadIncidentsFromDB() {
     const { data, error } = await supabase
         .from('emergency_requests')
         .select('*')
         .order('created_at', { ascending: false });
-    
+
     if (error) {
         console.error('Error loading incidents:', error);
         return [];
@@ -345,10 +347,10 @@ async function updateCache() {
     const incidents = await loadIncidentsFromDB();
     cachedIncidents = incidents;
     lastCacheUpdate = Date.now();
-    
+
     const activeIncidents = incidents.filter(i => i.status !== 'completed' && i.status !== 'cancelled');
     invertedIndex.rebuildIndex(activeIncidents);
-    
+
     priorityQueue.clear();
     const rankedIncidents = rankingAlgo.rankIncidents(activeIncidents);
     rankedIncidents.forEach(({ incident, ranking }) => {
@@ -358,7 +360,7 @@ async function updateCache() {
             incident: incident
         });
     });
-    
+
     console.log(`✅ Cache updated: ${incidents.length} total, ${activeIncidents.length} active`);
     return incidents;
 }
@@ -370,7 +372,6 @@ async function getIncidents(forceRefresh = false) {
     return cachedIncidents;
 }
 
-// ==================== MIDDLEWARE ====================
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -380,19 +381,15 @@ app.use(compression());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ==================== API ENDPOINTS ====================
-
 // 1. INVERTED INDEX SEARCH API
 app.get('/api/search', async (req, res) => {
     try {
         const { q } = req.query;
-        if (!q) {
-            return res.status(400).json({ error: 'Search query required' });
-        }
-        
+        if (!q) return res.status(400).json({ error: 'Search query required' });
+
         await getIncidents(true);
         const results = invertedIndex.search(q);
-        
+
         res.json({
             success: true,
             query: q,
@@ -420,7 +417,7 @@ app.get('/api/ranked-incidents', async (req, res) => {
         await getIncidents(true);
         const activeIncidents = cachedIncidents.filter(i => i.status !== 'completed' && i.status !== 'cancelled');
         const ranked = rankingAlgo.rankIncidents(activeIncidents);
-        
+
         res.json({
             success: true,
             count: ranked.length,
@@ -449,7 +446,7 @@ app.get('/api/priority-queue', async (req, res) => {
     try {
         await getIncidents(true);
         const nextIncident = priorityQueue.peek();
-        
+
         res.json({
             success: true,
             queue_size: priorityQueue.size(),
@@ -459,7 +456,8 @@ app.get('/api/priority-queue', async (req, res) => {
             } : null,
             all_incidents: priorityQueue.getAll().map(item => ({
                 id: item.id,
-                priority: item.priority
+                priority: item.priority,
+                incident: item.incident
             }))
         });
     } catch (error) {
@@ -468,16 +466,141 @@ app.get('/api/priority-queue', async (req, res) => {
     }
 });
 
+// 3b. PROVIDER-SPECIFIC DISTANCE-AWARE PRIORITY QUEUE
+app.get('/api/provider-ranked-queue', async (req, res) => {
+    try {
+        const { provider_id, max_distance_km, lat, lng } = req.query;
+        if (!provider_id) return res.status(400).json({ error: 'provider_id required' });
+
+        const maxDistance = max_distance_km ? parseFloat(max_distance_km) : 30;
+        const noLimit = maxDistance <= 0 || maxDistance === Infinity;
+
+        await getIncidents(true);
+
+        let providerLat = lat ? parseFloat(lat) : null;
+        let providerLng = lng ? parseFloat(lng) : null;
+
+        if (!providerLat || !providerLng) {
+            const { data: provider, error: provErr } = await supabase
+                .from('providers')
+                .select('latitude, longitude')
+                .eq('provider_id', provider_id)
+                .maybeSingle();
+
+            if (provErr) throw provErr;
+
+            if (provider?.latitude && provider?.longitude) {
+                providerLat = provider.latitude;
+                providerLng = provider.longitude;
+            }
+        }
+
+        if (!providerLat || !providerLng) {
+            return res.json({
+                success: false,
+                needs_location: true,
+                error: 'Provider base location not set',
+                all_incidents: []
+            });
+        }
+
+        const activeIncidents = cachedIncidents.filter(i => i.status === 'pending');
+
+        const haversine = (lat1, lng1, lat2, lng2) => {
+            const R = 6371;
+            const toRad = d => d * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const a = Math.sin(dLat/2)**2 +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLng/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        };
+
+        const distanceMultiplier = (km) => {
+            if (km <= 1) return 1.0;
+            if (km <= 30) return 1 - (km / 50);
+            if (km <= 60) return 0.4 - ((km - 30) / 100);
+            return Math.max(0.05, 0.1 - ((km - 60) / 200));
+        };
+
+        const distanceToProximity = (km) => {
+            if (km <= 1)  return 100;
+            if (km <= 5)  return Math.round(100 - ((km - 1) * 3));
+            if (km <= 15) return Math.round(88 - ((km - 5) * 3));
+            if (km <= 30) return Math.round(58 - ((km - 15) * 2));
+            if (km <= 60) return Math.round(28 - ((km - 30) * 0.7));
+            return Math.max(5, Math.round(7 - ((km - 60) / 10)));
+        };
+
+        const ranked = [];
+
+        for (const incident of activeIncidents) {
+            let distanceKm = null;
+            let proximity = 40;
+
+            if (incident.latitude && incident.longitude) {
+                distanceKm = haversine(providerLat, providerLng, incident.latitude, incident.longitude);
+                if (!noLimit && distanceKm > maxDistance) continue;
+                proximity = distanceToProximity(distanceKm);
+            } else {
+                if (!noLimit) continue;
+            }
+
+            const hh = rankingAlgo.calculateHumanHarmScore(incident);
+            const td = rankingAlgo.calculateTimeDecayScore(incident.created_at);
+            const ab = incident.admin_boost || 0;
+
+            let base = (hh * 0.55) + (td * 0.20) + (proximity * 0.20) + (ab * 0.05);
+            const tk = rankingAlgo.getTypeKey(incident.emergency_type);
+            const mul = rankingAlgo.typeMultipliers[tk] || 1.0;
+            base = base * mul;
+
+            const distMul = distanceKm != null ? distanceMultiplier(distanceKm) : 1.0;
+            let finalScore = Math.min(100, base * distMul);
+
+            ranked.push({
+                id: incident.request_id,
+                priority: finalScore,
+                incident: incident,
+                distance_km: distanceKm,
+                proximity_score: proximity,
+                distance_multiplier: distMul,
+                breakdown: {
+                    humanHarm: Math.round(hh),
+                    timeDecay: Math.round(td),
+                    proximity: proximity,
+                    adminBoost: ab
+                }
+            });
+        }
+
+        ranked.sort((a, b) => b.priority - a.priority);
+
+        res.json({
+            success: true,
+            count: ranked.length,
+            radius_km: noLimit ? 'unlimited' : maxDistance,
+            provider_location: { lat: providerLat, lng: providerLng },
+            all_incidents: ranked
+        });
+    } catch (error) {
+        console.error('Provider-ranked queue error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 4. DBSCAN CLUSTERING API
+// ⭐ Now includes `incidents[]` array inside each cluster so the admin modal can list them
 app.get('/api/clusters', async (req, res) => {
     try {
         await getIncidents(true);
-        const activeIncidents = cachedIncidents.filter(i => 
-            i.status !== 'completed' && 
-            i.status !== 'cancelled' && 
+        const activeIncidents = cachedIncidents.filter(i =>
+            i.status !== 'completed' &&
+            i.status !== 'cancelled' &&
             i.latitude && i.longitude
         );
-        
+
         const incidentsWithCoords = activeIncidents.map(i => ({
             request_id: i.request_id,
             emergency_type: i.emergency_type,
@@ -486,11 +609,15 @@ app.get('/api/clusters', async (req, res) => {
             priority_level: i.priority_level,
             description: i.description
         }));
-        
+
+        console.log(`[DBSCAN] Clustering ${incidentsWithCoords.length} incidents with ε=${clusterer.epsilon}° (${(clusterer.epsilon * 111).toFixed(1)} km), minPts=${clusterer.minPoints}`);
+
         const clusterResult = clusterer.cluster(incidentsWithCoords);
         const hotspots = clusterer.findHotspots(clusterResult);
         const suggestions = clusterer.suggestResponseAllocation(clusterResult);
-        
+
+        console.log(`[DBSCAN] Result: ${clusterResult.totalClusters} clusters, ${clusterResult.noise.length} noise`);
+
         res.json({
             success: true,
             total_clusters: clusterResult.totalClusters,
@@ -500,7 +627,15 @@ app.get('/api/clusters', async (req, res) => {
                 severity: c.severity,
                 types: c.types,
                 priority: c.priority,
-                center: c.center
+                center: c.center,
+                incidents: c.incidents.map(i => ({
+                    request_id: i.request_id,
+                    emergency_type: i.emergency_type,
+                    latitude: i.latitude,
+                    longitude: i.longitude,
+                    priority_level: i.priority_level,
+                    description: i.description
+                }))
             })),
             hotspots: hotspots,
             resource_suggestions: suggestions,
@@ -518,18 +653,12 @@ app.get('/api/incident/:id', async (req, res) => {
         const { id } = req.params;
         await getIncidents(true);
         const incident = cachedIncidents.find(i => i.request_id == id);
-        
-        if (!incident) {
-            return res.status(404).json({ error: 'Incident not found' });
-        }
-        
+
+        if (!incident) return res.status(404).json({ error: 'Incident not found' });
+
         const ranking = rankingAlgo.calculateScore(incident);
-        
-        res.json({
-            success: true,
-            incident: incident,
-            ranking: ranking
-        });
+
+        res.json({ success: true, incident: incident, ranking: ranking });
     } catch (error) {
         console.error('Get incident error:', error);
         res.status(500).json({ error: error.message });
@@ -541,37 +670,37 @@ app.post('/api/incident/:id/boost', async (req, res) => {
     try {
         const { id } = req.params;
         const { boost_percentage, reason, admin_id } = req.body;
-        
+
         const { data: incident, error: getError } = await supabase
             .from('emergency_requests')
             .select('admin_boost')
             .eq('request_id', id)
             .single();
-        
+
         if (getError) throw getError;
-        
+
         const newBoost = (incident.admin_boost || 0) + (boost_percentage || 5);
-        
+
         const { data, error } = await supabase
             .from('emergency_requests')
             .update({ admin_boost: newBoost })
             .eq('request_id', id)
             .select();
-        
+
         if (error) throw error;
-        
+
         await supabase.from('admin_boosts').insert({
             request_id: id,
             admin_id: admin_id,
             boost_percentage: boost_percentage || 5,
             reason: reason || 'Admin review'
         });
-        
+
         await updateCache();
-        
+
         const updatedIncident = cachedIncidents.find(i => i.request_id == id);
         const newRanking = updatedIncident ? rankingAlgo.calculateScore(updatedIncident) : null;
-        
+
         res.json({
             success: true,
             new_boost: newBoost,
@@ -588,18 +717,18 @@ app.post('/api/incident/:id/boost', async (req, res) => {
 app.post('/api/incidents', async (req, res) => {
     try {
         const incidentData = req.body;
-        
+
         console.log('Creating incident with data:', {
             requestor_id: incidentData.requestor_id,
             emergency_type: incidentData.emergency_type,
             has_video: !!incidentData.video_url
         });
-        
+
         const q1 = Number(incidentData.q1) || 0;
         const q2 = Number(incidentData.q2) || 0;
         const q3 = Number(incidentData.q3) || 0;
         const humanHarm = (q1 + q2 + q3) / 3;
-        
+
         const insertObj = {
             requestor_id: incidentData.requestor_id,
             emergency_type: incidentData.emergency_type,
@@ -619,26 +748,21 @@ app.post('/api/incidents', async (req, res) => {
             human_harm_score: humanHarm,
             status: 'pending'
         };
-        
-        if (incidentData.video_url) {
-            insertObj.video_url = incidentData.video_url;
-        }
-        if (incidentData.created_at) {
-            insertObj.created_at = incidentData.created_at;
-        }
-        
+
+        if (incidentData.video_url) insertObj.video_url = incidentData.video_url;
+        if (incidentData.created_at) insertObj.created_at = incidentData.created_at;
+
         const { data, error } = await supabase
             .from('emergency_requests')
             .insert(insertObj)
             .select()
             .single();
-        
+
         if (error) {
             console.error('Supabase insert error:', error);
             return res.status(500).json({ error: error.message });
         }
-        
-        // Compute and write back the score so it's persisted in the DB
+
         const ranking = rankingAlgo.calculateScore(data);
         try {
             await supabase
@@ -651,9 +775,9 @@ app.post('/api/incidents', async (req, res) => {
         } catch (e) {
             console.warn('Score write-back failed (non-fatal):', e);
         }
-        
+
         await updateCache();
-        
+
         res.json({
             success: true,
             incident: data,
@@ -667,36 +791,44 @@ app.post('/api/incidents', async (req, res) => {
 });
 
 // 8. GET SYSTEM ANALYTICS
+// ⭐ Now includes verified_providers_count (bypasses RLS by counting server-side)
 app.get('/api/analytics', async (req, res) => {
     try {
         await getIncidents(true);
-        
+
         const total = cachedIncidents.length;
         const active = cachedIncidents.filter(i => i.status !== 'completed' && i.status !== 'cancelled').length;
         const completed = cachedIncidents.filter(i => i.status === 'completed').length;
-        
-        const avgPriority = active > 0 ? 
+
+        const avgPriority = active > 0 ?
             cachedIncidents.filter(i => i.status !== 'completed').reduce((sum, i) => sum + (i.final_priority || 0), 0) / active : 0;
-        
+
         const priorityDistribution = {
             CRITICAL: cachedIncidents.filter(i => i.priority_level === 'CRITICAL').length,
             HIGH: cachedIncidents.filter(i => i.priority_level === 'HIGH').length,
             MEDIUM: cachedIncidents.filter(i => i.priority_level === 'MEDIUM').length,
             LOW: cachedIncidents.filter(i => i.priority_level === 'LOW').length
         };
-        
+
         const activeWithCoords = cachedIncidents.filter(i => i.latitude && i.longitude && i.status !== 'completed');
         const clusterResult = clusterer.cluster(activeWithCoords.map(i => ({
             latitude: i.latitude,
             longitude: i.longitude,
             emergency_type: i.emergency_type
         })));
-        
+
+        // ⭐ Fetch all providers (server-side) to bypass RLS on verified_by_admin filter
+        const { data: allProviders } = await supabase
+            .from('providers')
+            .select('provider_id, verified_by_admin');
+        const verifiedProviderCount = (allProviders || []).filter(p => p.verified_by_admin === true).length;
+
         res.json({
             success: true,
             total_incidents: total,
             active_incidents: active,
             completed_incidents: completed,
+            verified_providers_count: verifiedProviderCount,
             average_priority_score: avgPriority.toFixed(2),
             priority_distribution: priorityDistribution,
             hotspots_detected: clusterResult.totalClusters,
@@ -714,8 +846,8 @@ app.get('/api/analytics', async (req, res) => {
 app.post('/api/refresh', async (req, res) => {
     try {
         await updateCache();
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: 'Cache refreshed',
             incidents_count: cachedIncidents.length,
             queue_size: priorityQueue.size()
@@ -735,7 +867,8 @@ app.get('/api/health', async (req, res) => {
             inverted_index: true,
             weighted_ranking: true,
             dbscan_clustering: true,
-            priority_queue: true
+            priority_queue: true,
+            provider_distance_ranking: true
         },
         cache: {
             incidents_count: cachedIncidents.length,
@@ -747,21 +880,10 @@ app.get('/api/health', async (req, res) => {
 
 // ==================== SERVE HTML FILES ====================
 
-app.get('/', (req, res) => {
-    res.sendFile(join(__dirname, 'index.html'));
-});
-
-app.get('/requester-dashboard.html', (req, res) => {
-    res.sendFile(join(__dirname, 'requester-dashboard.html'));
-});
-
-app.get('/provider-dashboard.html', (req, res) => {
-    res.sendFile(join(__dirname, 'provider-dashboard.html'));
-});
-
-app.get('/admin-dashboard.html', (req, res) => {
-    res.sendFile(join(__dirname, 'admin-dashboard.html'));
-});
+app.get('/', (req, res) => res.sendFile(join(__dirname, 'index.html')));
+app.get('/requester-dashboard.html', (req, res) => res.sendFile(join(__dirname, 'requester-dashboard.html')));
+app.get('/provider-dashboard.html', (req, res) => res.sendFile(join(__dirname, 'provider-dashboard.html')));
+app.get('/admin-dashboard.html', (req, res) => res.sendFile(join(__dirname, 'admin-dashboard.html')));
 
 // ==================== START SERVER ====================
 
@@ -777,8 +899,6 @@ if (!process.env.VERCEL) {
     });
 }
 
-// Prime the cache once when the module loads (also runs on Vercel).
 updateCache().catch(err => console.error('Background cache init failed:', err));
 
-// For Vercel serverless deployment
 export default app;

@@ -59,6 +59,84 @@
             text-align: left;
         }
         .form-alert.show { display: block; }
+
+        /* ================= Profile Picture Upload ================= */
+        .profile-upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 6px 0 18px 0;
+        }
+        .profile-preview {
+            width: 108px;
+            height: 108px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: 3px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .profile-preview:hover {
+            border-color: #dc2626;
+            background: #fef2f2;
+            transform: scale(1.03);
+        }
+        .profile-preview.has-image {
+            border-style: solid;
+            border-color: #dc2626;
+        }
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-preview .placeholder-icon {
+            font-size: 2.1rem;
+            color: #94a3b8;
+        }
+        .profile-preview .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .profile-preview:hover .overlay { opacity: 1; }
+        .profile-preview .overlay i { font-size: 1.2rem; }
+
+        .profile-preview-label {
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 500;
+            text-align: center;
+        }
+        .profile-preview-label.success { color: #059669; font-weight: 600; }
+
+        .profile-remove-btn {
+            margin-top: 6px;
+            background: none;
+            border: none;
+            color: #dc2626;
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        .profile-remove-btn:hover { color: #b91c1c; }
     </style>
 </head>
 <body>
@@ -67,7 +145,7 @@
         <div class="nav-container">
             <div class="logo">
                 <span class="logo-icon">🚨</span>
-                <span class="logo-text">Emergency <span class="logo-highlight">Service Report</span></span>
+                <span class="logo-text">Emergency <span class="logo-highlight">Service Report System</span></span>
             </div>
             <div class="nav-links">
                 <a href="#home" class="nav-link">Home</a>
@@ -252,12 +330,6 @@
                         <i class="fas fa-sign-in-alt"></i> Login to Dashboard
                     </button>
                 </form>
-                <p class="modal-footer-text">
-                    <i class="fas fa-info-circle"></i> Demo Accounts:<br>
-                    citizen@esrs.com / password123<br>
-                    responder@esrs.com / password123<br>
-                    admin@esrs.com / password123
-                </p>
             </div>
 
             <!-- Register Form -->
@@ -265,10 +337,26 @@
                 <form id="registerForm" novalidate>
                     <div class="form-alert" id="registerAlert"></div>
 
+                    <!-- ⭐ Profile Picture Upload -->
+                    <div class="field">
+                        <div class="profile-upload-wrapper">
+                            <div class="profile-preview" id="profilePreview" onclick="document.getElementById('regProfilePic').click()">
+                                <span class="placeholder-icon">📷</span>
+                                <div class="overlay">
+                                    <i class="fas fa-camera"></i>
+                                    <span>Choose Photo</span>
+                                </div>
+                            </div>
+                            <input type="file" id="regProfilePic" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="handleProfilePicSelect(event)">
+                            <div class="profile-preview-label" id="profilePreviewLabel">Add Profile Picture (Optional)</div>
+                            <button type="button" class="profile-remove-btn" id="profileRemoveBtn" style="display:none" onclick="removeProfilePic(event)">Remove picture</button>
+                        </div>
+                    </div>
+
                     <div class="field">
                         <div class="input-group">
                             <i class="fas fa-user"></i>
-                            <input type="text" id="regName" placeholder="Full Name" autocomplete="name" maxlength="60">
+                            <input type="text" id="regName" placeholder="Full Name (First Last)" autocomplete="name" maxlength="60">
                         </div>
                         <small class="error-msg" id="err-regName"></small>
                     </div>
@@ -353,11 +441,6 @@
             <div class="footer-section">
                 <h4><i class="fas fa-shield-alt"></i> Emergency Service Report System</h4>
                 <p>Rapid Response When Every Second Counts</p>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                </div>
             </div>
             <div class="footer-section">
                 <h4><i class="fas fa-link"></i> Quick Links</h4>
@@ -449,6 +532,130 @@
         };
 
         /* ==================================================================
+           ⭐ PROFILE PICTURE UPLOAD
+           ================================================================== */
+        let currentProfileFile = null;
+        const MAX_PROFILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        window.handleProfilePicSelect = function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                alert('Please select an image file (JPG, PNG, GIF, or WebP).');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > MAX_PROFILE_SIZE) {
+                alert('Image is too large. Maximum size is 5MB.');
+                event.target.value = '';
+                return;
+            }
+
+            currentProfileFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('profilePreview');
+                preview.classList.add('has-image');
+                preview.innerHTML = `
+                    <img src="${e.target.result}" alt="Profile preview">
+                    <div class="overlay">
+                        <i class="fas fa-camera"></i>
+                        <span>Change Photo</span>
+                    </div>
+                `;
+
+                const label = document.getElementById('profilePreviewLabel');
+                label.textContent = '✓ Photo selected — click to change';
+                label.classList.add('success');
+
+                document.getElementById('profileRemoveBtn').style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.removeProfilePic = function (event) {
+            event.stopPropagation();
+            currentProfileFile = null;
+            document.getElementById('regProfilePic').value = '';
+
+            const preview = document.getElementById('profilePreview');
+            preview.classList.remove('has-image');
+            preview.innerHTML = `
+                <span class="placeholder-icon">📷</span>
+                <div class="overlay">
+                    <i class="fas fa-camera"></i>
+                    <span>Choose Photo</span>
+                </div>
+            `;
+
+            const label = document.getElementById('profilePreviewLabel');
+            label.textContent = 'Add Profile Picture (Optional)';
+            label.classList.remove('success');
+
+            document.getElementById('profileRemoveBtn').style.display = 'none';
+        };
+
+        function resetProfilePicUI() {
+            currentProfileFile = null;
+            const input = document.getElementById('regProfilePic');
+            if (input) input.value = '';
+
+            const preview = document.getElementById('profilePreview');
+            if (!preview) return;
+            preview.classList.remove('has-image');
+            preview.innerHTML = `
+                <span class="placeholder-icon">📷</span>
+                <div class="overlay">
+                    <i class="fas fa-camera"></i>
+                    <span>Choose Photo</span>
+                </div>
+            `;
+
+            const label = document.getElementById('profilePreviewLabel');
+            label.textContent = 'Add Profile Picture (Optional)';
+            label.classList.remove('success');
+
+            document.getElementById('profileRemoveBtn').style.display = 'none';
+        }
+
+        /**
+         * Upload profile picture to Supabase Storage. Returns public URL or null.
+         */
+        async function uploadProfilePicture(userId) {
+            if (!currentProfileFile) return null;
+
+            try {
+                const ext = (currentProfileFile.name.split('.').pop() || 'jpg').toLowerCase();
+                const fileName = `${userId}_${Date.now()}.${ext}`;
+
+                const { error: uploadError } = await supabaseClient.storage
+                    .from('profile-pictures')
+                    .upload(fileName, currentProfileFile, {
+                        cacheControl: '3600',
+                        upsert: true,
+                        contentType: currentProfileFile.type
+                    });
+
+                if (uploadError) {
+                    console.warn('Profile picture upload failed:', uploadError.message);
+                    return null;
+                }
+
+                const { data: urlData } = supabaseClient.storage
+                    .from('profile-pictures')
+                    .getPublicUrl(fileName);
+
+                return urlData?.publicUrl || null;
+            } catch (err) {
+                console.warn('Profile picture upload error:', err);
+                return null;
+            }
+        }
+
+        /* ==================================================================
            VALIDATION PATTERNS / BLACKLISTS
            ================================================================== */
 
@@ -461,24 +668,37 @@
         // Nepali mobile: exactly 10 digits starting with 98, 97 or 96
         const NP_MOBILE_REGEX = /^(98|97|96)\d{8}$/;
 
-        // Local-part blacklist (before the "@"). Catches placeholders like abc, 123, test, xyz.
+        // Name gibberish blacklist (letters-only, lowercase). Catches placeholders & keyboard mash.
+        const NAME_BLACKLIST = new Set([
+            'qwe', 'qwer', 'qwerty', 'qwertyuiop',
+            'asd', 'asdf', 'asdfg', 'asdfgh', 'asdfghj', 'asdfghjk', 'asdfghjkl',
+            'zxc', 'zxcv', 'zxcvb', 'zxcvbn', 'zxcvbnm',
+            'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg',
+            'xyz', 'xyzw', 'xyzabc',
+            'asdasd', 'asdasdasd', 'asdasdaskhdk', 'asdasdasdasd', 'asdasdasdasdasd',
+            'aaa', 'aaaa', 'aaaaa', 'bbb', 'ccc', 'ddd', 'xxx', 'yyy', 'zzz',
+            'test', 'testing', 'tester', 'tests',
+            'dummy', 'fake', 'sample', 'example',
+            'name', 'name1', 'username', 'user', 'user1', 'user12', 'user123',
+            'hello', 'hi', 'hey', 'blah', 'foobar', 'foo', 'bar',
+            'na', 'nil', 'none', 'null', 'yes', 'no',
+            'lorem', 'ipsum'
+        ]);
+
+        // Email local-part blacklist
         const EMAIL_LOCAL_BLACKLIST = new Set([
-            // Sequence / keyboard mash
             'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg',
             'xyz', 'xyzabc', 'asdf', 'asdfg', 'asdfgh', 'asdfghj',
             'qwerty', 'qwertyuiop', 'qwe', 'qwer', 'zxcv', 'zxcvb',
-            // Pure repeats
             'aa', 'aaa', 'aaaa', 'aaaaa',
             'bb', 'bbb', 'bbbb',
             'cc', 'ccc', 'cccc',
             'xx', 'xxx', 'xxxx',
             'yy', 'yyy', 'yyyy',
             'zz', 'zzz', 'zzzz',
-            // Digits / placeholders
             '1', '12', '123', '1234', '12345', '123456', '1234567', '12345678', '123456789',
             '0', '00', '000', '0000', '00000',
             '111', '1111', '11111', '222', '333', '444', '555', '666', '777', '888', '999',
-            // Generic test words
             'test', 'test1', 'test2', 'testing', 'tester', 'tests',
             'dummy', 'fake', 'sample', 'example', 'temp', 'temporary',
             'na', 'nil', 'none', 'null', 'no', 'yes',
@@ -487,7 +707,7 @@
             'lorem', 'ipsum', 'mail', 'email', 'contact', 'info'
         ]);
 
-        // Domain blacklist — throwaway / placeholder providers
+        // Throwaway / placeholder email domains
         const EMAIL_DOMAIN_BLACKLIST = new Set([
             'example.com', 'example.org', 'example.net',
             'test.com', 'test.test', 'test.org', 'test.net',
@@ -508,21 +728,80 @@
             if (!v) return `${label} is required`;
             if (/\d/.test(v)) return `${label} cannot contain numbers`;
             if (!NAME_REGEX.test(v)) return `${label} can only contain letters, spaces, apostrophes and hyphens`;
+
             const lettersOnly = v.replace(/[^A-Za-z\u0900-\u097F]/g, '');
             if (lettersOnly.length < 2) return `${label} must contain at least 2 letters`;
             if (v.length > 60) return `${label} is too long (max 60 characters)`;
+
+            const rawWords = v.split(/\s+/).filter(Boolean);
+            if (rawWords.length < 2) {
+                return 'Please enter your full name: First and Last name';
+            }
+            if (rawWords.length > 5) {
+                return 'Name has too many words (max 5)';
+            }
+
+            for (const w of rawWords) {
+                const lettersInWord = (w.match(/[A-Za-z\u0900-\u097F]/g) || []).length;
+                if (lettersInWord < 2) {
+                    return 'Each part of your name must be at least 2 letters';
+                }
+            }
+
+            const lower = v.toLowerCase();
+            const compact = lower.replace(/[^a-z\u0900-\u097F]/g, '');
+
+            if (NAME_BLACKLIST.has(compact)) {
+                return 'Please enter a real name';
+            }
+
+            const words = lower.split(/\s+/).filter(Boolean);
+            const keyboardRows = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+
+            for (const rawWord of words) {
+                const w = rawWord.replace(/[^a-z]/g, '');
+                if (w.length < 2) continue;
+
+                if (NAME_BLACKLIST.has(w)) {
+                    return 'Please enter a real name';
+                }
+
+                if (w.length >= 3 && !/[aeiouy]/.test(w)) {
+                    return 'Please enter a real name (a name should contain vowels)';
+                }
+
+                if (/[bcdfghjklmnpqrstvwxz]{5,}/.test(w)) {
+                    return 'Please enter a real name (looks like random letters)';
+                }
+
+                if (/(.)\1{2,}/.test(w)) {
+                    return 'Please enter a real name (repeated characters)';
+                }
+
+                for (const row of keyboardRows) {
+                    for (let i = 0; i <= row.length - 4; i++) {
+                        const seq = row.substr(i, 4);
+                        if (w.includes(seq)) {
+                            return 'Please enter a real name (keyboard pattern detected)';
+                        }
+                    }
+                    const revRow = row.split('').reverse().join('');
+                    for (let i = 0; i <= revRow.length - 4; i++) {
+                        const seq = revRow.substr(i, 4);
+                        if (w.includes(seq)) {
+                            return 'Please enter a real name (keyboard pattern detected)';
+                        }
+                    }
+                }
+
+                if (/(.{3,5})\1{1,}/.test(w)) {
+                    return 'Please enter a real name (repeating pattern detected)';
+                }
+            }
+
             return '';
         }
 
-        /**
-         * Strict email validator.
-         * Rejects:
-         *  - Placeholder local parts ("abc", "123", "test", "xyz", "aaa", etc.)
-         *  - Local parts that are only digits or symbols
-         *  - Local parts with fewer than 2 letters
-         *  - Excessive repeated characters ("aaa", "111")
-         *  - Blacklisted throwaway domains
-         */
         function validateEmail(value) {
             const v = value.trim();
 
@@ -539,7 +818,6 @@
             if (!local) return 'Email is missing the part before "@"';
             if (!domain) return 'Email is missing the domain after "@"';
 
-            // --- Local part checks ---
             if (local.length < 3) return 'The part before "@" must be at least 3 characters';
             if (local.length > 64) return 'The part before "@" is too long';
             if (!/^[A-Za-z0-9._%+-]+$/.test(local)) {
@@ -554,24 +832,20 @@
                 return 'Email cannot be only numbers or symbols before "@"';
             }
 
-            // Repeated characters: aaa, 111, ...
             if (/(.)\1{2,}/.test(local)) {
                 return 'Email looks invalid (too many repeated characters)';
             }
 
-            // Blacklist exact match
             const lowerLocal = local.toLowerCase();
             if (EMAIL_LOCAL_BLACKLIST.has(lowerLocal)) {
                 return 'Please use a real email address — placeholders like "abc" or "123" are not allowed';
             }
 
-            // Blacklist after stripping digits/symbols: "abc123" -> "abc" -> rejected
             const lettersOnlyLocal = lowerLocal.replace(/[^a-z]/g, '');
             if (lettersOnlyLocal.length >= 2 && EMAIL_LOCAL_BLACKLIST.has(lettersOnlyLocal)) {
                 return 'Please use a real email address — placeholders like "abc" or "123" are not allowed';
             }
 
-            // --- Domain checks ---
             if (domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
                 return 'Enter a valid domain (e.g. gmail.com)';
             }
@@ -582,7 +856,6 @@
                 return 'This email domain is not allowed. Please use a real email provider';
             }
 
-            // Final full-structure check
             if (!EMAIL_REGEX.test(v)) {
                 return 'Enter a valid email address (e.g. name@gmail.com)';
             }
@@ -669,7 +942,7 @@
                     group.classList.remove('valid');
                     if (shake) {
                         group.classList.remove('shake');
-                        void group.offsetWidth; // restart animation
+                        void group.offsetWidth;
                         group.classList.add('shake');
                     }
                 }
@@ -752,7 +1025,6 @@
            INPUT RESTRICTIONS
            ================================================================== */
 
-        // Phone: digits only, max 10
         const phoneInput = document.getElementById('regPhone');
         if (phoneInput) {
             phoneInput.addEventListener('input', function () {
@@ -770,7 +1042,6 @@
             });
         }
 
-        // Name: block digits while typing
         const nameInput = document.getElementById('regName');
         if (nameInput) {
             nameInput.addEventListener('keypress', function (e) {
@@ -791,10 +1062,8 @@
             const el = document.getElementById(id);
             if (!el) return;
 
-            // Validate on blur
             el.addEventListener('blur', () => validateField(id));
 
-            // Re-validate live only after the field has already shown an error
             el.addEventListener('input', () => {
                 const group = el.closest('.input-group');
                 if (group && group.classList.contains('invalid')) validateField(id);
@@ -830,7 +1099,6 @@
             e.preventDefault();
             hideAlert('loginAlert');
 
-            // Strict validation
             if (!validateFields(['loginEmail', 'loginPassword'])) {
                 return;
             }
@@ -859,7 +1127,6 @@
                     return;
                 }
 
-                // Fetch user role
                 const { data: userData, error: userError } = await supabaseClient
                     .from('users')
                     .select('role')
@@ -896,7 +1163,6 @@
             e.preventDefault();
             hideAlert('registerAlert');
 
-            // Strict validation
             const fieldsToValidate = ['regName', 'regEmail', 'regPhone', 'regPassword'];
             if (isProviderSelected()) {
                 fieldsToValidate.push('regOrganization', 'regLicense');
@@ -939,6 +1205,12 @@
                     return;
                 }
 
+                // ⭐ Upload profile picture (if user selected one)
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading profile picture...';
+                const profilePicUrl = await uploadProfilePicture(authData.user.id);
+
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving profile...';
+
                 const { error: userError } = await supabaseClient
                     .from('users')
                     .insert({
@@ -947,7 +1219,8 @@
                         phone: phone,
                         full_name: fullName,
                         role: role,
-                        is_verified: true
+                        is_verified: true,
+                        profile_picture: profilePicUrl
                     });
 
                 if (userError) {
@@ -972,7 +1245,6 @@
                     if (providerError) console.error('Error adding to providers:', providerError);
                 }
 
-                // Reset form + go back to login
                 document.getElementById('registerForm').reset();
                 document.getElementById('responderFields').style.display = 'none';
                 document.querySelectorAll('#registerForm .input-group').forEach(g => {
@@ -982,6 +1254,7 @@
                     el.textContent = '';
                     el.classList.remove('show');
                 });
+                resetProfilePicUI();
 
                 switchTab('login');
                 document.getElementById('loginEmail').value = email;
