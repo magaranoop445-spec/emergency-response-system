@@ -204,6 +204,9 @@
         let locationSource = null;
         let selectedAccuracy = null;
 
+        // ⭐ Rating cache: request_id -> rating value (1-5)
+        let ratingsCache = {};
+
         let toastTimer = null;
         function showToast(message, type = 'info', duration = 3000) {
             const el = document.getElementById('toast');
@@ -212,6 +215,88 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => { el.classList.remove('show'); }, duration);
         }
+
+        /* ============================ RATINGS ============================ */
+        // Load ratings for the current requester's own completed incidents.
+        async function loadMyRatings() {
+            if (!currentUser) return;
+            try {
+                const { data, error } = await supabase
+                    .from('emergency_requests')
+                    .select('request_id, rating')
+                    .eq('requestor_id', currentUser.user_id)
+                    .not('rating', 'is', null);
+
+                if (error) throw error;
+
+                ratingsCache = {};
+                (data || []).forEach(row => {
+                    if (row.rating != null) ratingsCache[row.request_id] = row.rating;
+                });
+            } catch (err) {
+                console.error('Failed to load ratings:', err);
+            }
+        }
+
+        // Render star widget only for own, completed incidents.
+        function renderStarRating(incident) {
+            const isOwn = incident.requestor_id === currentUser.user_id;
+            const isCompleted = incident.status === 'completed';
+            if (!isOwn || !isCompleted) return '';
+
+            const id = incident.id ?? incident.request_id;
+            const current = ratingsCache[id] || 0;
+
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                stars += `<span class="star ${i <= current ? 'filled' : ''}"
+                               onmouseover="hoverStar(this, ${i})"
+                               onmouseout="unhoverStars(this)"
+                               onclick="event.stopPropagation(); setRating(${id}, ${i})">★</span>`;
+            }
+
+            const label = current > 0
+                ? `You rated this service ${current}/5 — click to change`
+                : 'Rate this service:';
+
+            return `
+                <div class="rating-widget" onclick="event.stopPropagation();">
+                    <div class="rating-label">${label}</div>
+                    <div class="star-row" data-current="${current}">${stars}</div>
+                </div>
+            `;
+        }
+
+        window.hoverStar = (el, n) => {
+            const row = el.parentElement;
+            row.querySelectorAll('.star').forEach((s, i) => {
+                if (i < n) s.classList.add('hover');
+                else s.classList.remove('hover');
+            });
+        };
+
+        window.unhoverStars = (el) => {
+            const row = el.parentElement;
+            row.querySelectorAll('.star').forEach(s => s.classList.remove('hover'));
+        };
+
+        window.setRating = async (requestId, value) => {
+            try {
+                const { error } = await supabase
+                    .from('emergency_requests')
+                    .update({ rating: value })
+                    .eq('request_id', requestId);
+
+                if (error) throw error;
+
+                ratingsCache[requestId] = value;
+                showToast(`Rated ${value}/5 — thanks for your feedback!`, 'success');
+                await loadAllIncidents();
+            } catch (err) {
+                console.error('setRating failed:', err);
+                showToast('Failed to save rating: ' + err.message, 'error');
+            }
+        };
 
         /* ============================ AVATAR ============================ */
         function renderNavbarAvatar(url) {
@@ -378,6 +463,9 @@
                 else if (currentUser?.role === 'provider') window.location.href = 'provider-dashboard.html';
                 return;
             }
+
+            // ⭐ Load existing ratings before rendering
+            await loadMyRatings();
             await loadAllIncidents();
             await loadAllIncidentsForSearch();
         }
@@ -419,6 +507,7 @@
                             <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                             ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
                             ${hasMedia ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;">📸 Media evidence attached — click to view</div>` : ''}
+                            ${renderStarRating(incident)}
                         </div>
                     `}).join('');
                 } else {
@@ -461,6 +550,7 @@
                     <div>Status: <span class="status-badge status-${incident.status}">${incident.status?.toUpperCase() || 'PENDING'}</span></div>
                     ${incident.requestor_id === currentUser.user_id ? `<button onclick="event.stopPropagation(); deleteIncident('${idStr}')" class="btn-danger" style="margin-top:8px">🗑️ Delete (Your Report)</button>` : ''}
                     ${hasMedia ? `<div style="margin-top:8px; color:#3b82f6; font-size:0.7rem;">📸 Media evidence attached — click to view</div>` : ''}
+                    ${renderStarRating(incident)}
                 </div>
             `}).join('');
         }
@@ -960,6 +1050,7 @@
             locationSource = null;
             selectedAccuracy = null;
             
+            await loadMyRatings();
             await loadAllIncidents();
             await loadAllIncidentsForSearch();
         });

@@ -193,6 +193,54 @@
             toastTimer = setTimeout(() => { el.classList.remove('show'); }, duration);
         }
 
+        /* ============================ PROVIDER STATS ============================ */
+        // Recomputes total_services + rating from the incidents table.
+        // Idempotent: safe to call any number of times, never double-counts.
+        async function recomputeProviderStats(providerId) {
+            try {
+                // Count completed incidents assigned to this provider
+                const { count: completedCount, error: countErr } = await supabase
+                    .from('emergency_requests')
+                    .select('request_id', { count: 'exact', head: true })
+                    .eq('assigned_provider_id', providerId)
+                    .eq('status', 'completed');
+
+                if (countErr) throw countErr;
+
+                // Fetch all ratings this provider has received
+                const { data: ratedRows, error: rateErr } = await supabase
+                    .from('emergency_requests')
+                    .select('rating')
+                    .eq('assigned_provider_id', providerId)
+                    .not('rating', 'is', null);
+
+                if (rateErr) throw rateErr;
+
+                const avg = (ratedRows && ratedRows.length > 0)
+                    ? Math.round((ratedRows.reduce((s, r) => s + (r.rating || 0), 0) / ratedRows.length) * 10) / 10
+                    : 0;
+
+                const { error: updateErr } = await supabase
+                    .from('providers')
+                    .update({
+                        total_services: completedCount || 0,
+                        rating: avg
+                    })
+                    .eq('provider_id', providerId);
+
+                if (updateErr) throw updateErr;
+
+                // Keep local state in sync
+                if (providerData && providerData.provider_id === providerId) {
+                    providerData.total_services = completedCount || 0;
+                    providerData.rating = avg;
+                }
+            } catch (err) {
+                console.error('recomputeProviderStats failed:', err);
+            }
+        }
+        window.recomputeProviderStats = recomputeProviderStats;
+
         /* ============================ AVATAR ============================ */
         function renderNavbarAvatar(url) {
             profilePicUrl = url;
@@ -343,6 +391,10 @@
             applyAvailabilityUI(providerData?.is_available !== false);
             updateLocationInfo();
             renderNavbarAvatar(currentUser?.profile_picture || null);
+
+            // Auto-sync stats on load — fixes any drift and backfills past completions
+            await recomputeProviderStats(currentUser.user_id);
+
             await Promise.all([loadPriorityQueue(), loadAssignedIncidents(), loadProviderStats()]);
         }
 
@@ -866,7 +918,7 @@
             if (data) {
                 providerData = { ...providerData, ...data };
                 document.getElementById('totalServices').textContent = data.total_services || 0;
-                document.getElementById('providerRating').textContent = data.rating?.toFixed(1) || '0';
+                document.getElementById('providerRating').textContent = (data.rating ?? 0).toFixed(1);
             }
         }
 
@@ -885,17 +937,26 @@
             }
         };
 
+        // ⭐ UPDATED: recompute stats whenever status becomes completed
         window.updateStatus = async (id, status) => {
             if (providerData?.is_available === false) {
                 showToast('You cannot update status while Unavailable. Toggle to Available first.', 'error');
                 return;
             }
-            const { error } = await supabase.from('emergency_requests').update({ status }).eq('request_id', id);
-            if (error) showToast('Error: ' + error.message, 'error');
-            else {
-                showToast(`Status updated: ${status.replace('_', ' ')}`, 'success');
-                await loadAssignedIncidents();
-                if (status === 'completed') await loadProviderStats();
+
+            const { error } = await supabase
+                .from('emergency_requests')
+                .update({ status })
+                .eq('request_id', id);
+
+            if (error) { showToast('Error: ' + error.message, 'error'); return; }
+
+            showToast(`Status updated: ${status.replace('_', ' ')}`, 'success');
+            await loadAssignedIncidents();
+
+            if (status === 'completed') {
+                await recomputeProviderStats(currentUser.user_id);
+                await loadProviderStats();
             }
         };
 

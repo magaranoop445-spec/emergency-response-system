@@ -382,3 +382,33 @@ body.theme-admin .btn-verify, body.theme-admin .btn-boost { background: var(--ac
 body.theme-admin .btn-verify:hover, body.theme-admin .btn-boost:hover { background: #B91C1C; }
 body.theme-admin .queue-toolbar label, body.theme-admin .detail-label { font-family: var(--mono); letter-spacing: 0.08em; }
 body.theme-admin .hotspot-header h3 { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; }
+/* ============================================================
+   RATING WIDGET — requester star picker (completed incidents)
+   ============================================================ */
+   .rating-widget {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+}
+.rating-label {
+    font-size: 0.7rem;
+    color: var(--ink-3);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+}
+.star-row {
+    display: flex;
+    gap: 4px;
+    font-size: 1.4rem;
+    line-height: 1;
+    user-select: none;
+}
+.star {
+    color: var(--surface-3);
+    cursor: pointer;
+    transition: transform 0.1s ease, color 0.1s ease;
+}
+.star:hover { transform: scale(1.15); }
+.star.filled { color: #F59E0B; }
+.star.hover { color: #FBBF24; }
